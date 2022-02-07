@@ -1,2 +1,3 @@
-# obs-soundboard
-OBS plugin that adds a soundboard dock
+# OBS Soundboard
+
+OBS plugin that adds a soundboard dock.

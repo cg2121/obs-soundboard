@@ -1,0 +1,403 @@
+name: 'CI Plugin Build'
+
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+    branches:
+      - main
+    tags:
+      - '*'
+
+env:
+  MACOS_SIGN_PLUGIN: false
+  OBS_VERSION: "27.2.0"
+  QT_VERSION: "5.15.2"
+  MACOS_BUNDLEID: "com.obs-plugins.soundboard"
+
+jobs:
+  ubuntu64:
+    name: 'Linux/Ubuntu 64-bit'
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v2.3.3
+        with:
+          submodules: 'recursive'
+      - name: 'Fetch git info'
+        shell: bash
+        run: |
+          git fetch --prune --unshallow
+          echo "PLUGIN_NAME=$(basename `git rev-parse --show-toplevel`)" >> $GITHUB_ENV
+          echo "PLUGIN_VERSION=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+      - name: Install dependencies
+        if: success()
+        shell: bash
+        run: |
+          echo "NPROC=$(($(nproc)+1))" >> $GITHUB_ENV
+          sudo add-apt-repository -y ppa:obsproject/obs-studio
+          sudo apt-get -qq update
+          sudo apt-get install -y \
+               libc-dev-bin \
+               libc6-dev git \
+               build-essential \
+               checkinstall \
+               cmake \
+               obs-studio \
+               qtbase5-dev
+          sudo wget -O /usr/include/obs/obs-frontend-api.h https://raw.githubusercontent.com/obsproject/obs-studio/${{ env.OBS_VERSION }}/UI/obs-frontend-api/obs-frontend-api.h
+          sudo ldconfig
+      - name: Build Plugin
+        if: success()
+        shell: bash
+        run: |
+          mkdir build && cd build
+          cmake -DCMAKE_INSTALL_PREFIX=/usr ..
+          make -j${NPROC:-4}
+      - name: Package Plugin
+        if: success()
+        shell: bash
+        run: |
+          cd build
+          sudo checkinstall -y --type=debian --fstrans=no --nodoc \
+               --backup=no \
+               --deldoc=yes \
+               --install=no \
+               --pkgname="${{ env.PLUGIN_NAME }}" \
+               --pkgversion="${{ env.PLUGIN_VERSION }}" \
+               --pkglicense="GPLv2.0" \
+               --pkggroup="video" \
+               --requires="obs-studio \(\>= 25.0.7\), libqt5core5a, libqt5widgets5, qt5-image-formats-plugins" \
+               --pakdir="${{ github.workspace }}/package"
+           sudo chmod ao+r ${{ github.workspace }}/package/*
+      - name: 'Publish artifact'
+        if: success()
+        uses: actions/upload-artifact@v2.2.0
+        with:
+          name: 'ubuntu-artifact'
+          path: './package/*.deb'
+  macos64:
+    name: 'macOS 64-bit'
+    runs-on: [macos-latest]
+    env:
+      MACOS_DEPS_VERSION: "2021-03-25"
+      MIN_MACOS_VERSION: '10.13'
+      CODE_SIGNING_IDENTITY: ${{ secrets.MACOS_CODE_SIGNING_IDENTITY }}
+      INSTALLER_SIGNING_IDENTITY: ${{ secrets.MACOS_INSTALLER_SIGNING_IDENTITY }}
+      AC_USERNAME: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
+      AC_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
+      AC_PROVIDER_SHORTNAME: ${{ secrets.MACOS_NOTARIZATION_PROVIDER_SHORTNAME }}
+    steps:
+      - name: Get current setup
+        shell: bash
+        id: get_arch
+        run: | 
+          echo "CURRENT_ARCH=$(uname -m)" >> $GITHUB_ENV
+          echo "NPROC=$(sysctl -n hw.ncpu)" >> $GITHUB_ENV
+      - name: 'Checkout'
+        uses: actions/checkout@v2.3.3
+        with:
+          submodules: 'recursive'
+      - name: 'Fetch git info'
+        shell: bash
+        run: |
+          git fetch --prune --unshallow
+          echo "PLUGIN_NAME=$(basename `git rev-parse --show-toplevel`)" >> $GITHUB_ENV
+          echo "PLUGIN_VERSION=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+      - name: 'Install prerequisite: Pre-built dependencies'
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-deps-${{ env.CURRENT_ARCH }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz
+          tar -xf ./macos-deps-${{ env.CURRENT_ARCH }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz -C "/tmp"
+      - name: 'Install prerequisite: Pre-built dependency Qt'
+        if: steps.deps-qt-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-qt-${{ env.QT_VERSION }}-${{ env.CURRENT_ARCH }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz
+          tar -xf ./macos-qt-${{ env.QT_VERSION }}-${{ env.CURRENT_ARCH }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz -C "/tmp"
+          xattr -r -d com.apple.quarantine /tmp/obsdeps
+      - name: Build OBS
+        if: success()
+        shell: bash
+        run: |
+          git clone https://github.com/obsproject/obs-studio
+          cd obs-studio
+          git checkout ${{ env.OBS_VERSION }}
+          mkdir build && cd build
+          cmake .. \
+              -DDepsPath="/tmp/obsdeps" \
+              -DQTDIR="/tmp/obsdeps" \
+              -DCMAKE_OSX_DEPLOYMENT_TARGET=${{ env.MIN_MACOS_VERSION }} \
+              -DDISABLE_PLUGINS=true \
+              -DENABLE_SCRIPTING=0
+          make -j${NPROC:-4}
+      - name: Build plugin
+        if: success()
+        shell: bash
+        run: |
+          mkdir build && cd build
+          cmake .. \
+              -DQTDIR="/tmp/obsdeps" \
+              -DLIBOBS_INCLUDE_DIR="${{ github.workspace }}/obs-studio/libobs" \
+              -DLIBOBS_LIB="${{ github.workspace }}/obs-studio/libobs" \
+              -DOBS_FRONTEND_LIB="${{ github.workspace }}/obs-studio/build/UI/obs-frontend-api/libobs-frontend-api.dylib" \
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DCMAKE_INSTALL_PREFIX="/usr"
+          make -j${NPROC:-4}
+      - name: 'Install Apple Developer Certificate'
+        if: success() && github.event_name == 'push' && contains(github.ref, 'refs/tags/') && env.MACOS_SIGN_PLUGIN == 'true'
+        uses: apple-actions/import-codesign-certs@253ddeeac23f2bdad1646faac5c8c2832e800071
+        with:
+          p12-file-base64: ${{ secrets.MACOS_SIGNING_CERT }}
+          p12-password: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
+      - name: Preparing plugin for packaging
+        if: success()
+        shell: bash
+        run: |
+          install_name_tool \
+              -change /usr/local/opt/qt/lib/QtWidgets.framework/Versions/5/QtWidgets \
+              @executable_path/../Frameworks/QtWidgets.framework/Versions/5/QtWidgets \
+              -change /usr/local/opt/qt/lib/QtGui.framework/Versions/5/QtGui \
+              @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui \
+              -change /usr/local/opt/qt/lib/QtCore.framework/Versions/5/QtCore \
+              @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore \
+              ./build/${{ env.PLUGIN_NAME }}.so
+          otool -L ./build/${{ env.PLUGIN_NAME }}.so
+      - name: Codesigning plugin
+        if: success() && github.event_name == 'push' && contains(github.ref, 'refs/tags/') && env.MACOS_SIGN_PLUGIN == 'true'
+        shell: bash
+        run: |
+          codesign --sign "${{ env.CODE_SIGNING_IDENTITY }}" ${{ github.workspace }}/build/${{ env.PLUGIN_NAME }}.so
+      - name: 'Cache DMGs'
+        id: dmgs-cache
+        uses: actions/cache@v2.1.2
+        env:
+          CACHE_NAME: 'dmgs-cache'
+        with:
+          path: ${{ github.workspace }}/dmgs
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-packages-dmg
+      - name: Download Packages
+        if: steps.dmgs-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir ./dmgs
+          curl -L -o ./dmgs/Packages.dmg http://s.sudre.free.fr/Software/files/Packages.dmg
+      - name: Install Packages
+        run: |
+          hdiutil attach ./dmgs/Packages.dmg
+          sudo installer -pkg /Volumes/Packages*/packages/Packages.pkg -target /
+          hdiutil detach /Volumes/Packages*
+      - name: Building package
+        if: success()
+        shell: bash
+        run: |
+          packagesbuild ./installer/installer-macOS.generated.pkgproj
+          mv ${{ github.workspace }}/release/${{ env.PLUGIN_NAME }}.pkg ${{ github.workspace }}/release/${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}-Unsigned.pkg
+      - name: Signing package
+        if: success() && github.event_name == 'push' && contains(github.ref, 'refs/tags/') && env.MACOS_SIGN_PLUGIN == 'true'
+        shell: bash
+        run: |
+          productsign \
+              --sign "${{ env.INSTALLER_SIGNING_IDENTITY }}" \
+              ${{ github.workspace }}/release/${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}-Unsigned.pkg \
+              ${{ github.workspace }}/release/${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}.pkg
+          rm ${{ github.workspace }}/release/${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}-Unsigned.pkg
+          zip -r ${{ github.workspace }}/release/${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}.pkg.zip ${{ github.workspace }}/release/${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}.pkg
+          UPLOAD_RESULT=$(xcrun altool \
+              --notarize-app \
+              --primary-bundle-id "${{ env.MACOS_BUNDLEID }}" \
+              --username "${{ env.AC_USERNAME }}" \
+              --password "${{ env.AC_PASSWORD }}" \
+              --asc-provider "${{ env.AC_PROVIDER_SHORTNAME }}" \
+              --file "${{ github.workspace }}/release/${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}.pkg.zip")
+          rm ${{ github.workspace }}/release/${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}.pkg.zip
+          REQUEST_UUID=$(echo $UPLOAD_RESULT | awk -F ' = ' '/RequestUUID/ {print $2}')
+          echo "Request UUID: $REQUEST_UUID"
+          echo "=> Wait for notarization result"
+          while sleep 30 && date; do
+              CHECK_RESULT=$(xcrun altool \
+                  --notarization-info "$REQUEST_UUID" \
+                  --username "${{ env.AC_USERNAME }}" \
+                  --password "${{ env.AC_PASSWORD }}" \
+                  --asc-provider "${{ env.AC_PROVIDER_SHORTNAME }}")
+              echo $CHECK_RESULT
+              if ! grep -q "Status: in progress" <<< "$CHECK_RESULT"; then
+                  echo "=> Staple ticket to installer: ${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}.pkg"
+                  xcrun stapler staple ${{ github.workspace }}/release/${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}.pkg
+                  break
+              fi
+          done
+      - name: 'Publish artifact'
+        if: success()
+        uses: actions/upload-artifact@v2.2.0
+        with:
+          name: 'mac-artifact'
+          path: './release/*.pkg'
+  win64:
+    name: 'Windows 64-bit'
+    runs-on: [windows-latest]
+    env:
+      CMAKE_GENERATOR: "Visual Studio 16 2019"
+      CMAKE_SYSTEM_VERSION: "10.0.18363.657"
+      WINDOWS_DEPS_VERSION: '2019'
+    steps:
+      - name: 'Add msbuild to PATH'
+        uses: microsoft/setup-msbuild@v1.0.2
+      - name: 'Checkout'
+        uses: actions/checkout@v2.3.3
+        with:
+          submodules: 'recursive'
+      - name: 'Fetch git info'
+        shell: bash
+        run: |
+          git fetch --prune --unshallow
+          echo "PLUGIN_NAME=$(basename `git rev-parse --show-toplevel`)" >> $GITHUB_ENV
+          echo "PLUGIN_VERSION=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+      - name: 'Restore QT dependency from cache'
+        id: qt-cache
+        uses: actions/cache@v2.1.2
+        env:
+          CACHE_NAME: 'windows-qt-cache'
+        with:
+          path: ${{ github.workspace }}/cmbuild/QT
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.QT_VERSION }}
+      - name: 'Restore pre-built dependencies from cache'
+        id: deps-cache
+        uses: actions/cache@v2.1.2
+        env:
+          CACHE_NAME: 'windows-deps-cache'
+        with:
+          path: ${{ github.workspace }}/cmbuild/deps
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.WINDOWS_DEPS_VERSION }}
+      - name: 'Install prerequisite: QT'
+        if: success() && steps.qt-cache.outputs.cache-hit != 'true'
+        run: |
+          curl -kLO https://cdn-fastly.obsproject.com/downloads/Qt_${{ env.QT_VERSION }}.7z -f --retry 5 -C -
+          7z x Qt_${{ env.QT_VERSION }}.7z -o"${{ github.workspace }}/cmbuild/QT"
+      - name: 'Install prerequisite: Pre-built dependencies'
+        if: success() && steps.deps-cache.outputs.cache-hit != 'true'
+        run: |
+          curl -kLO https://cdn-fastly.obsproject.com/downloads/dependencies${{ env.WINDOWS_DEPS_VERSION }}.zip -f --retry 5 -C -
+          7z x dependencies${{ env.WINDOWS_DEPS_VERSION }}.zip -o"${{ github.workspace }}/cmbuild/deps"
+      - name: 'Configure OBS'
+        if: success()
+        shell: bash
+        run: |
+          git clone https://github.com/obsproject/obs-studio
+          cd obs-studio
+          git checkout ${{ env.OBS_VERSION }}
+          mkdir build
+          cd build
+          cmake .. \
+              -G "${{ env.CMAKE_GENERATOR }}" \
+              -A x64 \
+              -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" \
+              -DDepsPath="${{ github.workspace }}/cmbuild/deps/win64" \
+              -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2019_64" \
+              -DDISABLE_PLUGINS=TRUE \
+              -DCOPIED_DEPENDENCIES=FALSE \
+              -DCOPY_DEPENDENCIES=TRUE
+      - name: 'Build OBS'
+        if: success()
+        run: msbuild /m /p:Configuration=RelWithDebInfo ${{ github.workspace }}/obs-studio/build/obs-studio.sln
+      - name: 'Configure plugin'
+        if: success()
+        shell: bash
+        run: |
+          mkdir build
+          cd build
+          cmake .. \
+              -G "${{ env.CMAKE_GENERATOR }}" \
+              -A x64 \
+              -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" \
+              -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2019_64" \
+              -DLibObs_DIR="${{ github.workspace }}/obs-studio/build/libobs" \
+              -DLIBOBS_INCLUDE_DIR="${{ github.workspace }}/obs-studio/libobs" \
+              -DLIBOBS_LIB="${{ github.workspace }}/obs-studio/build/libobs/RelWithDebInfo/obs.lib" \
+              -DOBS_FRONTEND_LIB="${{ github.workspace }}/obs-studio/build/UI/obs-frontend-api/RelWithDebInfo/obs-frontend-api.lib"
+      - name: 'Build plugin'
+        if: success()
+        run: msbuild /m /p:Configuration=RelWithDebInfo ${{ github.workspace }}/build/${{ env.PLUGIN_NAME }}.sln
+      - name: 'Package plugin'
+        if: success()
+        run: |
+          mkdir package
+          cd package
+          7z a "${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}-win64.zip" "${{ github.workspace }}/release/*"
+          iscc ${{ github.workspace }}/installer/installer-Windows.generated.iss /O. /F"${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}-windows-installer"
+      - name: 'Publish installer artifact'
+        if: success()
+        uses: actions/upload-artifact@v2.2.0
+        with:
+          name: 'windows-installer-artifact'
+          path: './package/*.exe'
+      - name: 'Publish zip artifact'
+        if: success()
+        uses: actions/upload-artifact@v2.2.0
+        with:
+          name: 'windows-zip-artifact'
+          path: './package/*.zip'
+  make-release:
+    name: 'Create and upload release'
+    runs-on: [ubuntu-latest]
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+    needs: [win64, macos64, ubuntu64]
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+      - name: 'Fetch git info'
+        shell: bash
+        run: |
+          git fetch --prune --unshallow
+          echo "PLUGIN_NAME=$(basename `git rev-parse --show-toplevel`)" >> $GITHUB_ENV
+          echo "PLUGIN_VERSION=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+      - name: 'Create Release'
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.PLUGIN_VERSION }}
+          release_name: OBS Soundboard ${{ env.PLUGIN_VERSION }}
+          draft: false
+          prerelease: ${{ contains(env.PLUGIN_VERSION, 'rc') }}
+      - name: 'Download release artifacts'
+        uses: actions/download-artifact@v2-preview
+      - name: 'Upload win64 to release'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ github.workspace }}/windows-installer-artifact/${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}-windows-installer.exe
+          asset_name: ${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}-win64-installer.exe
+          asset_content_type: application/octet-stream
+      - name: 'Upload win64 zip to release'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ github.workspace }}/windows-zip-artifact/${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}-win64.zip
+          asset_name: ${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}-win64.zip
+          asset_content_type: application/octet-stream
+      - name: 'Upload macOS to release'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ github.workspace }}/mac-artifact/${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}-Unsigned.pkg
+          asset_name: ${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}.pkg
+          asset_content_type: application/octet-stream
+      - name: 'Upload Ubuntu to release'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ github.workspace }}/ubuntu-artifact/${{ env.PLUGIN_NAME }}_${{ env.PLUGIN_VERSION }}-1_amd64.deb
+          asset_name: ${{ env.PLUGIN_NAME }}_${{ env.PLUGIN_VERSION }}-1_amd64.deb
+          asset_content_type: application/octet-stream
