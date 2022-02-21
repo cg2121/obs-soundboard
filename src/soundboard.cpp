@@ -1068,12 +1068,12 @@ bool obs_module_load(void)
 {
 	if (LIBOBS_API_VER < MAKE_SEMANTIC_VERSION(27, 2, 0)) {
 		blog(LOG_ERROR,
-		     "[obs-soundboard]: Soundboard plugin requires OBS 27.2.0 or newer");
+		     "Soundboard plugin requires OBS 27.2.0 or newer");
 		return false;
 	}
 
 	blog(LOG_INFO,
-	     "[obs-soundboard]: Soundboard plugin version %s is loaded",
+	     "Soundboard plugin version %s is loaded",
 	     PLUGIN_VERSION);
 
 	return true;
