@@ -159,12 +159,9 @@ static void OBSEvent(enum obs_frontend_event event, void *data)
 			source = obs_source_create_private(
 				"ffmpeg_source",
 				QT_TO_UTF8(QTStr("Soundboard")), nullptr);
-			sb->vol.reset(new VolControl(source, true, true));
-			QObject::connect(sb->vol.data()->config,
-					 SIGNAL(clicked()), sb,
-					 SLOT(VolControlContextMenu()));
-			sb->ui->horizontalLayout->addWidget(sb->vol.data());
+
 			sb->mediaControls->SetSource(source);
+			sb->vol->SetSource(source);
 			sb->ResetWidgets();
 			sb->source = source;
 		}
@@ -333,6 +330,11 @@ Soundboard::Soundboard(QWidget *parent) : QWidget(parent), ui(new Ui_Soundboard)
 	mediaControls = new MediaControls();
 	ui->mainLayout->insertWidget(1, mediaControls);
 
+	vol = new VolControl(source, true, true);
+	ui->horizontalLayout->addWidget(vol);
+	QObject::connect(vol->config, SIGNAL(clicked()), this,
+			 SLOT(VolControlContextMenu()));
+
 	obs_frontend_add_event_callback(OBSEvent, this);
 	obs_frontend_add_save_callback(OnSave, this);
 }
@@ -431,9 +433,7 @@ void Soundboard::SaveSoundboard(obs_data_t *saveData)
 	obs_data_set_bool(saveData, "grid_mode", ui->soundList->GetGridMode());
 	obs_data_set_bool(saveData, "lock_volume", lockVolume);
 
-	if (vol.data())
-		obs_data_set_bool(saveData, "hide_volume",
-				  !vol.data()->isVisible());
+	obs_data_set_bool(saveData, "hide_volume", !vol->isVisible());
 
 	obs_data_set_bool(saveData, "hide_media_controls",
 			  !mediaControls->isVisible());
@@ -464,11 +464,6 @@ void Soundboard::LoadSoundboard(obs_data_t *saveData)
 		"ffmpeg_source", QT_TO_UTF8(QTStr("Soundboard")), nullptr);
 
 	if (!obs_obj_invalid(newSource)) {
-		vol.reset(new VolControl(newSource, true, true));
-		QObject::connect(vol.data()->config, SIGNAL(clicked()), this,
-				 SLOT(VolControlContextMenu()));
-		ui->horizontalLayout->addWidget(vol.data());
-		mediaControls->SetSource(newSource);
 		source = newSource;
 
 		obs_source_set_muted(source,
@@ -516,6 +511,9 @@ void Soundboard::LoadSoundboard(obs_data_t *saveData)
 					obs_source_filter_add(source, filter);
 			}
 		}
+
+		mediaControls->SetSource(source);
+		vol->SetSource(source);
 	}
 
 	OBSDataArrayAutoRelease array =
@@ -566,7 +564,7 @@ void Soundboard::LoadSoundboard(obs_data_t *saveData)
 	ToggleLockVolume(lock);
 
 	bool hide = obs_data_get_bool(saveData, "hide_volume");
-	vol.data()->setHidden(hide);
+	vol->setHidden(hide);
 
 	hide = obs_data_get_bool(saveData, "hide_media_controls");
 	mediaControls->setHidden(hide);
@@ -599,6 +597,7 @@ void Soundboard::ClearSoundboard()
 {
 	mediaControls->countDownTimer = false;
 	mediaControls->SetSource(nullptr);
+	vol->SetSource(nullptr);
 	source = nullptr;
 
 	ui->soundList->setCurrentItem(nullptr, QItemSelectionModel::Clear);
@@ -842,20 +841,14 @@ void Soundboard::DuplicateSound()
 void Soundboard::ResetWidgets()
 {
 	ui->soundList->SetGridMode(true);
-
-	if (vol.data())
-		vol.data()->show();
-
-	if (mediaControls)
-		mediaControls->show();
-
+	vol->show();
+	mediaControls->show();
 	ui->soundboardToolbar->show();
 }
 
 void Soundboard::VolumeControlsToggled(bool checked)
 {
-	if (vol.data())
-		vol.data()->setVisible(checked);
+	vol->setVisible(checked);
 }
 
 void Soundboard::MediaControlsToggled(bool checked)
@@ -883,7 +876,7 @@ void Soundboard::on_soundList_customContextMenuRequested(const QPoint &pos)
 
 	QAction volumeAction(QTStr("VolumeControls"));
 	volumeAction.setCheckable(true);
-	volumeAction.setChecked(vol.data()->isVisible());
+	volumeAction.setChecked(vol->isVisible());
 	connect(&volumeAction, SIGNAL(toggled(bool)), this,
 		SLOT(VolumeControlsToggled(bool)));
 	view.addAction(&volumeAction);
@@ -955,7 +948,7 @@ void Soundboard::OpenAdvAudio()
 
 void Soundboard::ToggleLockVolume(bool checked)
 {
-	vol.data()->EnableSlider(!checked);
+	vol->EnableSlider(!checked);
 	lockVolume = checked;
 }
 
@@ -1072,8 +1065,7 @@ bool obs_module_load(void)
 		return false;
 	}
 
-	blog(LOG_INFO,
-	     "Soundboard plugin version %s is loaded",
+	blog(LOG_INFO, "Soundboard plugin version %s is loaded",
 	     PLUGIN_VERSION);
 
 	return true;

@@ -95,11 +95,11 @@ void VolControl::updateText()
 	volLabel->setText(text);
 
 	bool muted = obs_source_muted(source);
-	const char *accTextLookup = muted ? "VolControl.SliderMuted"
-					  : "VolControl.SliderUnmuted";
+	QString accTextLookup = muted ? QTStr("VolControl.SliderMuted")
+					  : QTStr("VolControl.SliderUnmuted");
 
-	QString sourceName = obs_source_get_name(source);
-	QString accText = QTStr(accTextLookup).arg(sourceName);
+	QString sourceName = QTStr("Soundboard");
+	QString accText = accTextLookup.arg(sourceName);
 
 	slider->setAccessibleName(accText);
 }
@@ -129,7 +129,48 @@ void VolControl::setPeakMeterType(enum obs_peak_meter_type peakMeterType)
 	volMeter->setPeakMeterType(peakMeterType);
 }
 
-VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
+void VolControl::SetSource(obs_source_t *newSource)
+{
+	if (source == newSource)
+		return;
+
+	obs_fader_remove_callback(obs_fader, OBSVolumeChanged, this);
+	obs_volmeter_remove_callback(obs_volmeter, OBSVolumeLevel, this);
+
+	signal_handler_disconnect(obs_source_get_signal_handler(source), "mute",
+				  OBSVolumeMuted, this);
+
+	if (newSource) {
+		QString sourceName = QT_UTF8(obs_source_get_name(newSource));
+
+		obs_fader_attach_source(obs_fader, newSource);
+		obs_volmeter_attach_source(obs_volmeter, newSource);
+
+		obs_fader_add_callback(obs_fader, OBSVolumeChanged, this);
+		obs_volmeter_add_callback(obs_volmeter, OBSVolumeLevel, this);
+
+		signal_handler_connect(obs_source_get_signal_handler(newSource),
+				       "mute", OBSVolumeMuted, this);
+
+		bool muted = obs_source_muted(newSource);
+		mute->setChecked(muted);
+		volMeter->muted = muted;
+		mute->setAccessibleName(
+			QTStr("VolControl.Mute").arg(sourceName));
+
+		nameLabel->setText(sourceName);
+		setObjectName(sourceName);
+
+		config->setAccessibleName(
+			QTStr("VolControl.Properties").arg(sourceName));
+
+		VolumeChanged();
+	}
+
+	source = newSource;
+}
+
+VolControl::VolControl(obs_source_t *source_, bool showConfig, bool vertical)
 	: source(std::move(source_)),
 	  levelTotal(0.0f),
 	  levelCount(0.0f),
@@ -142,9 +183,6 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	volLabel = new QLabel();
 	mute = new MuteCheckBox();
 
-	QString sourceName = obs_source_get_name(source);
-	setObjectName(sourceName);
-
 	if (showConfig) {
 		config = new QPushButton(this);
 		config->setProperty("themeID", "configIconSmall");
@@ -153,9 +191,6 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 				      QSizePolicy::Maximum);
 		config->setMaximumSize(22, 22);
 		config->setAutoDefault(false);
-
-		config->setAccessibleName(
-			QTStr("VolControl.Properties").arg(sourceName));
 
 		connect(config, &QAbstractButton::clicked, this,
 			&VolControl::EmitConfigClicked);
@@ -247,7 +282,6 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	QFont font = nameLabel->font();
 	font.setPointSize(font.pointSize() - 1);
 
-	nameLabel->setText(sourceName);
 	nameLabel->hide();
 	nameLabel->setFont(font);
 	volLabel->setFont(font);
@@ -255,23 +289,10 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	slider->setMinimum(0);
 	slider->setMaximum(int(FADER_PRECISION));
 
-	bool muted = obs_source_muted(source);
-	mute->setChecked(muted);
-	volMeter->muted = muted;
-	mute->setAccessibleName(QTStr("VolControl.Mute").arg(sourceName));
-	obs_fader_add_callback(obs_fader, OBSVolumeChanged, this);
-	obs_volmeter_add_callback(obs_volmeter, OBSVolumeLevel, this);
-
-	signal_handler_connect(obs_source_get_signal_handler(source), "mute",
-			       OBSVolumeMuted, this);
-
 	QWidget::connect(slider, SIGNAL(valueChanged(int)), this,
 			 SLOT(SliderChanged(int)));
 	QWidget::connect(mute, SIGNAL(clicked(bool)), this,
 			 SLOT(SetMuted(bool)));
-
-	obs_fader_attach_source(obs_fader, source);
-	obs_volmeter_attach_source(obs_volmeter, source);
 
 	QString styleName = slider->style()->objectName();
 	QStyle *style;
@@ -285,8 +306,7 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	style->setParent(slider);
 	slider->setStyle(style);
 
-	/* Call volume changed once to init the slider position and label */
-	VolumeChanged();
+	SetSource(source);
 }
 
 void VolControl::EnableSlider(bool enable)
@@ -296,12 +316,6 @@ void VolControl::EnableSlider(bool enable)
 
 VolControl::~VolControl()
 {
-	obs_fader_remove_callback(obs_fader, OBSVolumeChanged, this);
-	obs_volmeter_remove_callback(obs_volmeter, OBSVolumeLevel, this);
-
-	signal_handler_disconnect(obs_source_get_signal_handler(source), "mute",
-				  OBSVolumeMuted, this);
-
 	obs_fader_destroy(obs_fader);
 	obs_volmeter_destroy(obs_volmeter);
 	if (contextMenu)

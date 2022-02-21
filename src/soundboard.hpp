@@ -74,8 +74,8 @@ public:
 	void SaveSoundboard(obs_data_t *saveData);
 	void LoadSoundboard(obs_data_t *saveData);
 
-	QScopedPointer<VolControl> vol;
 	MediaControls *mediaControls = nullptr;
+	VolControl *vol = nullptr;
 
 	std::vector<SoundData *> sounds;
 	QString GetSoundName(SoundData *sound);

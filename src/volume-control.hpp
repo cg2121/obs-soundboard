@@ -293,7 +293,7 @@ signals:
 	void ConfigClicked();
 
 public:
-	explicit VolControl(OBSSource source, bool showConfig = false,
+	explicit VolControl(obs_source_t *source, bool showConfig = false,
 			    bool vertical = false);
 	~VolControl();
 
@@ -309,4 +309,6 @@ public:
 	inline void SetContextMenu(QMenu *cm) { contextMenu = cm; }
 
 	QPushButton *config = nullptr;
+
+	void SetSource(obs_source_t *newSource);
 };
