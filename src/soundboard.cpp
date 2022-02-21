@@ -155,7 +155,7 @@ static void OBSEvent(enum obs_frontend_event event, void *data)
 	switch (event) {
 	case OBS_FRONTEND_EVENT_FINISHED_LOADING:
 	case OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED:
-		if (!sb->source) {
+		if (obs_obj_invalid(sb->source)) {
 			source = obs_source_create_private(
 				"ffmpeg_source",
 				QT_TO_UTF8(QTStr("Soundboard")), nullptr);
@@ -394,7 +394,7 @@ void Soundboard::SaveSoundboard(obs_data_t *saveData)
 	OBSDataArrayAutoRelease array = SaveSounds();
 	obs_data_set_array(saveData, "soundboard_array", array);
 
-	if (source) {
+	if (!obs_obj_invalid(source)) {
 		OBSDataAutoRelease sourceData = obs_save_source(source);
 		obs_data_set_obj(saveData, "soundboard_source", sourceData);
 	}
@@ -460,60 +460,66 @@ void Soundboard::LoadSoundboard(obs_data_t *saveData)
 	OBSDataAutoRelease sourceData =
 		obs_data_get_obj(saveData, "soundboard_source");
 
-	obs_source_t *newSource = obs_source_create_private(
-		"ffmpeg_source", QT_TO_UTF8(QTStr("Soundboard")), nullptr);
+	if (sourceData) {
+		obs_source_t *newSource = obs_source_create_private(
+			"ffmpeg_source", QT_TO_UTF8(QTStr("Soundboard")),
+			nullptr);
 
-	if (!obs_obj_invalid(newSource)) {
-		source = newSource;
+		if (!obs_obj_invalid(newSource)) {
+			source = newSource;
 
-		obs_source_set_muted(source,
-				     obs_data_get_bool(sourceData, "muted"));
+			obs_source_set_muted(
+				source, obs_data_get_bool(sourceData, "muted"));
 
-		obs_data_set_default_double(sourceData, "volume", 1.0);
-		obs_source_set_volume(source, (float)obs_data_get_double(
-						      sourceData, "volume"));
+			obs_data_set_default_double(sourceData, "volume", 1.0);
+			obs_source_set_volume(
+				source, (float)obs_data_get_double(sourceData,
+								   "volume"));
 
-		obs_data_set_default_double(sourceData, "balance", 0.5);
-		obs_source_set_balance_value(
-			source,
-			(float)obs_data_get_double(sourceData, "balance"));
+			obs_data_set_default_double(sourceData, "balance", 0.5);
+			obs_source_set_balance_value(
+				source, (float)obs_data_get_double(sourceData,
+								   "balance"));
 
-		obs_source_set_sync_offset(source, obs_data_get_int(sourceData,
-								    "sync"));
+			obs_source_set_sync_offset(
+				source, obs_data_get_int(sourceData, "sync"));
 
-		obs_source_set_monitoring_type(
-			source, (enum obs_monitoring_type)obs_data_get_int(
+			obs_source_set_monitoring_type(
+				source,
+				(enum obs_monitoring_type)obs_data_get_int(
 					sourceData, "monitoring_type"));
 
-		obs_data_set_default_int(sourceData, "mixers", 0x3F);
-		uint32_t mixers =
-			(uint32_t)obs_data_get_int(sourceData, "mixers");
-		obs_source_set_audio_mixers(source, mixers);
+			obs_data_set_default_int(sourceData, "mixers", 0x3F);
+			uint32_t mixers = (uint32_t)obs_data_get_int(sourceData,
+								     "mixers");
+			obs_source_set_audio_mixers(source, mixers);
 
-		uint32_t flags =
-			(uint32_t)obs_data_get_int(sourceData, "flags");
-		obs_source_set_flags(source, flags);
+			uint32_t flags =
+				(uint32_t)obs_data_get_int(sourceData, "flags");
+			obs_source_set_flags(source, flags);
 
-		OBSDataArrayAutoRelease filters =
-			obs_data_get_array(sourceData, "filters");
+			OBSDataArrayAutoRelease filters =
+				obs_data_get_array(sourceData, "filters");
 
-		if (filters) {
-			size_t count = obs_data_array_count(filters);
+			if (filters) {
+				size_t count = obs_data_array_count(filters);
 
-			for (size_t i = 0; i < count; i++) {
-				OBSDataAutoRelease filterData =
-					obs_data_array_item(filters, i);
+				for (size_t i = 0; i < count; i++) {
+					OBSDataAutoRelease filterData =
+						obs_data_array_item(filters, i);
 
-				OBSSourceAutoRelease filter =
-					obs_load_source(filterData);
+					OBSSourceAutoRelease filter =
+						obs_load_source(filterData);
 
-				if (filter)
-					obs_source_filter_add(source, filter);
+					if (filter)
+						obs_source_filter_add(source,
+								      filter);
+				}
 			}
-		}
 
-		mediaControls->SetSource(source);
-		vol->SetSource(source);
+			mediaControls->SetSource(source);
+			vol->SetSource(source);
+		}
 	}
 
 	OBSDataArrayAutoRelease array =
