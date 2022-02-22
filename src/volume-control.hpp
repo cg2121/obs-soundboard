@@ -8,6 +8,7 @@
 #include <QMutex>
 #include <QList>
 #include <QMenu>
+#include <QSlider>
 
 class QPushButton;
 class VolumeMeterTimer;

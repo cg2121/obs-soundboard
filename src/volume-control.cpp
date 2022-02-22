@@ -1,6 +1,5 @@
 #include "volume-control.hpp"
 #include "mute-checkbox.hpp"
-#include "slider-ignorewheel.hpp"
 #include "slider-absoluteset-style.hpp"
 #include "util/platform.h"
 #include "obs-module.h"
@@ -193,7 +192,8 @@ VolControl::VolControl(obs_source_t *source_, bool showConfig, bool vertical)
 		QHBoxLayout *meterLayout = new QHBoxLayout;
 
 		volMeter = new VolumeMeter(nullptr, obs_volmeter, true);
-		slider = new VolumeSlider(obs_fader, Qt::Vertical);
+		slider = new QSlider(this);
+		slider->setOrientation(Qt::Vertical);
 
 		nameLayout->setAlignment(Qt::AlignCenter);
 		meterLayout->setAlignment(Qt::AlignCenter);
@@ -237,7 +237,8 @@ VolControl::VolControl(obs_source_t *source_, bool showConfig, bool vertical)
 		QHBoxLayout *botLayout = new QHBoxLayout;
 
 		volMeter = new VolumeMeter(nullptr, obs_volmeter, false);
-		slider = new VolumeSlider(obs_fader, Qt::Horizontal);
+		slider = new QSlider(this);
+		slider->setOrientation(Qt::Horizontal);
 
 		textLayout->setContentsMargins(0, 0, 0, 0);
 		textLayout->addWidget(nameLabel);
