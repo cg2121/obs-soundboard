@@ -468,6 +468,20 @@ void Soundboard::LoadSoundboard(obs_data_t *saveData)
 		if (!obs_obj_invalid(newSource)) {
 			source = newSource;
 
+			const char *id = obs_source_get_id(source);
+
+			if (!id || !*id) {
+				source = nullptr;
+				return;
+			}
+
+			const char *name = obs_source_get_name(source);
+
+			if (!name || !*name) {
+				source = nullptr;
+				return;
+			}
+
 			obs_source_set_muted(
 				source, obs_data_get_bool(sourceData, "muted"));
 
