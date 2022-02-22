@@ -452,11 +452,8 @@ void Soundboard::SaveSoundboard(obs_data_t *saveData)
 			  mediaControls->countDownTimer);
 }
 
-void Soundboard::LoadSoundboard(obs_data_t *saveData)
+void Soundboard::LoadSource(obs_data_t *saveData)
 {
-	QMainWindow *window = (QMainWindow *)obs_frontend_get_main_window();
-	QDockWidget *dock = static_cast<QDockWidget *>(parent());
-
 	OBSDataAutoRelease sourceData =
 		obs_data_get_obj(saveData, "soundboard_source");
 
@@ -535,6 +532,14 @@ void Soundboard::LoadSoundboard(obs_data_t *saveData)
 			vol->SetSource(source);
 		}
 	}
+}
+
+void Soundboard::LoadSoundboard(obs_data_t *saveData)
+{
+	QMainWindow *window = (QMainWindow *)obs_frontend_get_main_window();
+	QDockWidget *dock = static_cast<QDockWidget *>(parent());
+
+	LoadSource(saveData);
 
 	OBSDataArrayAutoRelease array =
 		obs_data_get_array(saveData, "soundboard_array");

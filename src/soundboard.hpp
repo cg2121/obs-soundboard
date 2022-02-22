@@ -59,6 +59,7 @@ public:
 
 	obs_data_array_t *SaveSounds();
 	void LoadSounds(obs_data_array_t *array);
+	void LoadSource(obs_data_t *saveData);
 	void ClearSoundboard();
 
 	OBSSourceAutoRelease source;
