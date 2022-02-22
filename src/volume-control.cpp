@@ -93,15 +93,6 @@ void VolControl::updateText()
 		text = QString::number(db, 'f', 1).append(" dB");
 
 	volLabel->setText(text);
-
-	bool muted = obs_source_muted(source);
-	QString accTextLookup = muted ? QTStr("VolControl.SliderMuted")
-					  : QTStr("VolControl.SliderUnmuted");
-
-	QString sourceName = QTStr("Soundboard");
-	QString accText = accTextLookup.arg(sourceName);
-
-	slider->setAccessibleName(accText);
 }
 
 QString VolControl::GetName() const
@@ -155,14 +146,9 @@ void VolControl::SetSource(obs_source_t *newSource)
 		bool muted = obs_source_muted(newSource);
 		mute->setChecked(muted);
 		volMeter->muted = muted;
-		mute->setAccessibleName(
-			QTStr("VolControl.Mute").arg(sourceName));
 
 		nameLabel->setText(sourceName);
 		setObjectName(sourceName);
-
-		config->setAccessibleName(
-			QTStr("VolControl.Properties").arg(sourceName));
 
 		VolumeChanged();
 	}
