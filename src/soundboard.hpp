@@ -93,6 +93,10 @@ private:
 
 	QString prevName = "";
 
+	bool volVisible = true;
+	bool mediaControlsVisible = true;
+	bool toolbarVisible = true;
+
 private slots:
 	void on_soundList_itemClicked(QListWidgetItem *item);
 	void on_actionAddSound_triggered();

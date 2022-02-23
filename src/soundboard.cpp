@@ -425,20 +425,18 @@ void Soundboard::SaveSoundboard(obs_data_t *saveData)
 	obs_data_array_release(data2);
 	obs_data_array_release(data3);
 
-	obs_data_set_bool(saveData, "visible", dock->isVisible());
-	obs_data_set_bool(saveData, "floating", dock->isFloating());
-	obs_data_set_string(saveData, "geometry",
+	obs_data_set_bool(saveData, "dock_visible", dock->isVisible());
+	obs_data_set_bool(saveData, "dock_floating", dock->isFloating());
+	obs_data_set_string(saveData, "dock_geometry",
 			    dock->saveGeometry().toBase64().constData());
 	obs_data_set_int(saveData, "dock_area", window->dockWidgetArea(dock));
 	obs_data_set_bool(saveData, "grid_mode", ui->soundList->GetGridMode());
 	obs_data_set_bool(saveData, "lock_volume", lockVolume);
 
-	obs_data_set_bool(saveData, "hide_volume", !vol->isVisible());
-
-	obs_data_set_bool(saveData, "hide_media_controls",
-			  !mediaControls->isVisible());
-	obs_data_set_bool(saveData, "hide_toolbar",
-			  !ui->soundboardToolbar->isVisible());
+	obs_data_set_bool(saveData, "volume_visible", volVisible);
+	obs_data_set_bool(saveData, "media_controls_visible",
+			  mediaControlsVisible);
+	obs_data_set_bool(saveData, "toolbar_visible", toolbarVisible);
 
 	obs_data_set_bool(saveData, "props_use_percent", usePercent);
 
@@ -562,7 +560,7 @@ void Soundboard::LoadSoundboard(obs_data_t *saveData)
 	data1 = obs_data_get_array(saveData, "pause_hotkey");
 	obs_hotkey_pair_load(playPauseHotkeys, data0, data1);
 
-	const char *geometry = obs_data_get_string(saveData, "geometry");
+	const char *geometry = obs_data_get_string(saveData, "dock_geometry");
 
 	if (geometry && *geometry)
 		dock->restoreGeometry(
@@ -574,11 +572,11 @@ void Soundboard::LoadSoundboard(obs_data_t *saveData)
 	if (dockArea)
 		window->addDockWidget(dockArea, dock);
 
-	bool visible = obs_data_get_bool(saveData, "visible");
+	bool visible = obs_data_get_bool(saveData, "dock_visible");
 	dock->setVisible(visible);
 
-	obs_data_set_default_bool(saveData, "floating", true);
-	bool floating = obs_data_get_bool(saveData, "floating");
+	obs_data_set_default_bool(saveData, "dock_floating", true);
+	bool floating = obs_data_get_bool(saveData, "dock_floating");
 	dock->setFloating(floating);
 
 	obs_data_set_default_bool(saveData, "grid_mode", true);
@@ -588,14 +586,17 @@ void Soundboard::LoadSoundboard(obs_data_t *saveData)
 	bool lock = obs_data_get_bool(saveData, "lock_volume");
 	ToggleLockVolume(lock);
 
-	bool hide = obs_data_get_bool(saveData, "hide_volume");
-	vol->setHidden(hide);
+	obs_data_set_default_bool(saveData, "volume_visible", true);
+	visible = obs_data_get_bool(saveData, "volume_visible");
+	VolumeControlsToggled(visible);
 
-	hide = obs_data_get_bool(saveData, "hide_media_controls");
-	mediaControls->setHidden(hide);
+	obs_data_set_default_bool(saveData, "media_controls_visible", true);
+	visible = obs_data_get_bool(saveData, "media_controls_visible");
+	MediaControlsToggled(visible);
 
-	hide = obs_data_get_bool(saveData, "hide_toolbar");
-	ui->soundboardToolbar->setHidden(hide);
+	obs_data_set_default_bool(saveData, "toolbar_visible", true);
+	visible = obs_data_get_bool(saveData, "toolbar_visible");
+	ToolbarToggled(visible);
 
 	bool percent = obs_data_get_bool(saveData, "props_use_percent");
 	usePercent = percent;
@@ -866,24 +867,27 @@ void Soundboard::DuplicateSound()
 void Soundboard::ResetWidgets()
 {
 	ui->soundList->SetGridMode(true);
-	vol->show();
-	mediaControls->show();
-	ui->soundboardToolbar->show();
+	VolumeControlsToggled(true);
+	MediaControlsToggled(true);
+	ToolbarToggled(true);
 }
 
 void Soundboard::VolumeControlsToggled(bool checked)
 {
 	vol->setVisible(checked);
+	volVisible = checked;
 }
 
 void Soundboard::MediaControlsToggled(bool checked)
 {
 	mediaControls->setVisible(checked);
+	mediaControlsVisible = checked;
 }
 
 void Soundboard::ToolbarToggled(bool checked)
 {
 	ui->soundboardToolbar->setVisible(checked);
+	toolbarVisible = checked;
 }
 
 void Soundboard::on_soundList_customContextMenuRequested(const QPoint &pos)
