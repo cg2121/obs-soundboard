@@ -456,75 +456,10 @@ void Soundboard::LoadSource(obs_data_t *saveData)
 		obs_data_get_obj(saveData, "soundboard_source");
 
 	if (sourceData) {
-		obs_source_t *newSource = obs_source_create_private(
-			"ffmpeg_source", QT_TO_UTF8(QTStr("Soundboard")),
-			nullptr);
+			source = obs_load_private_source(sourceData);
 
-		if (!obs_obj_invalid(newSource)) {
-			source = newSource;
-
-			const char *id = obs_source_get_id(source);
-
-			if (!id || !*id) {
-				source = nullptr;
+			if (!obs_obj_valid(source))
 				return;
-			}
-
-			const char *name = obs_source_get_name(source);
-
-			if (!name || !*name) {
-				source = nullptr;
-				return;
-			}
-
-			obs_source_set_muted(
-				source, obs_data_get_bool(sourceData, "muted"));
-
-			obs_data_set_default_double(sourceData, "volume", 1.0);
-			obs_source_set_volume(
-				source, (float)obs_data_get_double(sourceData,
-								   "volume"));
-
-			obs_data_set_default_double(sourceData, "balance", 0.5);
-			obs_source_set_balance_value(
-				source, (float)obs_data_get_double(sourceData,
-								   "balance"));
-
-			obs_source_set_sync_offset(
-				source, obs_data_get_int(sourceData, "sync"));
-
-			obs_source_set_monitoring_type(
-				source,
-				(enum obs_monitoring_type)obs_data_get_int(
-					sourceData, "monitoring_type"));
-
-			obs_data_set_default_int(sourceData, "mixers", 0x3F);
-			uint32_t mixers = (uint32_t)obs_data_get_int(sourceData,
-								     "mixers");
-			obs_source_set_audio_mixers(source, mixers);
-
-			uint32_t flags =
-				(uint32_t)obs_data_get_int(sourceData, "flags");
-			obs_source_set_flags(source, flags);
-
-			OBSDataArrayAutoRelease filters =
-				obs_data_get_array(sourceData, "filters");
-
-			if (filters) {
-				size_t count = obs_data_array_count(filters);
-
-				for (size_t i = 0; i < count; i++) {
-					OBSDataAutoRelease filterData =
-						obs_data_array_item(filters, i);
-
-					OBSSourceAutoRelease filter =
-						obs_load_source(filterData);
-
-					if (filter)
-						obs_source_filter_add(source,
-								      filter);
-				}
-			}
 
 			mediaControls->SetSource(source);
 			vol->SetSource(source);
