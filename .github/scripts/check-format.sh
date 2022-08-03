@@ -43,6 +43,8 @@ fi
 
 find . -type d \( \
     -path ./\*build -o \
+    -path ./\*build_x86_64 -o \
+    -path ./\*release -o \
     -path ./cmake -o \
     -path ./plugins/decklink/\*/decklink-sdk -o \
     -path ./plugins/enc-amf -o \

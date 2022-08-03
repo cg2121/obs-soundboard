@@ -1,8 +1,7 @@
 #include "sound-data.hpp"
 
-SoundData::SoundData(const QString &name_, const QString &path_) :
-	name(name_),
-	path(path_)
+SoundData::SoundData(const QString &name_, const QString &path_)
+	: name(name_), path(path_)
 {
 	sounds.emplace_back(this);
 }
@@ -10,7 +9,8 @@ SoundData::SoundData(const QString &name_, const QString &path_) :
 SoundData::~SoundData()
 {
 	obs_hotkey_unregister(hotkey);
-	sounds.erase(std::remove(sounds.begin(), sounds.end(), this), sounds.end());
+	sounds.erase(std::remove(sounds.begin(), sounds.end(), this),
+		     sounds.end());
 }
 
 QString SoundData::GetName(const SoundData &sound)

@@ -113,8 +113,7 @@ void SoundEdit::on_buttonBox_clicked(QAbstractButton *button)
 
 		if ((editMode && ui->nameEdit->text() != origText &&
 		     NameExists(ui->nameEdit->text())) ||
-		    (!editMode &&
-		     NameExists(ui->nameEdit->text())))
+		    (!editMode && NameExists(ui->nameEdit->text())))
 			nameExists = true;
 
 		if (nameExists) {
@@ -456,14 +455,14 @@ void Soundboard::LoadSource(obs_data_t *saveData)
 		obs_data_get_obj(saveData, "soundboard_source");
 
 	if (sourceData) {
-			source = obs_load_private_source(sourceData);
+		source = obs_load_private_source(sourceData);
 
-			if (obs_obj_invalid(source))
-				return;
+		if (obs_obj_invalid(source))
+			return;
 
-			mediaControls->SetSource(source);
-			vol->SetSource(source);
-		}
+		mediaControls->SetSource(source);
+		vol->SetSource(source);
+	}
 }
 
 void Soundboard::LoadSoundboard(obs_data_t *saveData)
@@ -687,8 +686,7 @@ static QString GetDefaultString(const QString &name)
 void Soundboard::on_actionAddSound_triggered()
 {
 	SoundEdit edit(this);
-	edit.ui->nameEdit->setText(
-		GetDefaultString(QTStr("Sound")));
+	edit.ui->nameEdit->setText(GetDefaultString(QTStr("Sound")));
 	edit.setWindowTitle(QTStr("AddSound"));
 	edit.exec();
 }
