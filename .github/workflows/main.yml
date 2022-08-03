@@ -5,17 +5,17 @@ on:
     paths-ignore:
       - '**.md'
     branches:
-      - master
+      - main
     tags:
       - '*'
   pull_request:
     paths-ignore:
       - '**.md'
     branches:
-      - master
+      - main
 
 env:
-  PLUGIN_NAME: 'obs-plugintemplate'
+  PLUGIN_NAME: 'obs-soundboard'
 
 jobs:
   clang_check:
@@ -253,7 +253,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        arch: [x86, x64]
+        arch: [x64]
     if: always()
     needs: [clang_check]
     outputs:
@@ -385,8 +385,6 @@ jobs:
           files: |
             ${{ github.workspace }}/${{ env.PLUGIN_NAME }}-windows-x64-${{ steps.metadata.outputs.commitHash }}/*.zip
             ${{ github.workspace }}/${{ env.PLUGIN_NAME }}-windows-x64-${{ steps.metadata.outputs.commitHash }}-installer/*.exe
-            ${{ github.workspace }}/${{ env.PLUGIN_NAME }}-windows-x86-${{ steps.metadata.outputs.commitHash }}/*.zip
-            ${{ github.workspace }}/${{ env.PLUGIN_NAME }}-windows-x86-${{ steps.metadata.outputs.commitHash }}-installer/*.exe
             ${{ github.workspace }}/${{ env.PLUGIN_NAME }}-linux-x86_64-${{ steps.metadata.outputs.commitHash }}/*.deb
             ${{ github.workspace }}/${{ env.PLUGIN_NAME }}-macos-x86_64-${{ steps.metadata.outputs.commitHash }}/*.pkg
             ${{ github.workspace }}/${{ env.PLUGIN_NAME }}-macos-arm64-${{ steps.metadata.outputs.commitHash }}/*.pkg
