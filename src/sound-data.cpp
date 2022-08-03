@@ -1,5 +1,7 @@
 #include "sound-data.hpp"
 
+std::vector<SoundData *> SoundData::sounds;
+
 SoundData::SoundData(const QString &name_, const QString &path_)
 	: name(name_), path(path_)
 {
