@@ -14,11 +14,18 @@
 #include <QMessageBox>
 #include <QDockWidget>
 #include <QMenu>
-#include <QAction>
+#include <QListWidget>
+
+#include <scene-tree.hpp>
+#include <volume-control.hpp>
+#include <media-controls.hpp>
+
+#include <sound-data.hpp>
 
 #define QT_UTF8(str) QString::fromUtf8(str, -1)
 #define QT_TO_UTF8(str) str.toUtf8().constData()
 #define QTStr(str) QT_UTF8(obs_module_text(str))
+#define MainStr(str) QT_UTF8(obs_frontend_get_locale_string(str))
 
 ListRenameDelegate::ListRenameDelegate(QObject *parent)
 	: QStyledItemDelegate(parent)
@@ -76,12 +83,10 @@ void SoundEdit::on_browseButton_clicked()
 		ui->fileEdit->setText(fileName);
 }
 
-static bool NameExists(QListWidget *list, const QString &name)
+static bool NameExists(const QString &name)
 {
-	for (int i = 0; i < list->count(); i++) {
-		if (list->item(i)->text() == name)
-			return true;
-	}
+	if (SoundData::FindSoundByName(name))
+		return true;
 
 	return false;
 }
@@ -107,9 +112,9 @@ void SoundEdit::on_buttonBox_clicked(QAbstractButton *button)
 		bool nameExists = false;
 
 		if ((editMode && ui->nameEdit->text() != origText &&
-		     NameExists(sb->ui->soundList, ui->nameEdit->text())) ||
+		     NameExists(ui->nameEdit->text())) ||
 		    (!editMode &&
-		     NameExists(sb->ui->soundList, ui->nameEdit->text())))
+		     NameExists(ui->nameEdit->text())))
 			nameExists = true;
 
 		if (nameExists) {
@@ -149,7 +154,6 @@ static void OnSave(obs_data_t *saveData, bool saving, void *data)
 static void OBSEvent(enum obs_frontend_event event, void *data)
 {
 	Soundboard *sb = static_cast<Soundboard *>(data);
-	QDockWidget *dock = static_cast<QDockWidget *>(sb->parent());
 	obs_source_t *source = nullptr;
 
 	switch (event) {
@@ -167,10 +171,6 @@ static void OBSEvent(enum obs_frontend_event event, void *data)
 		}
 
 		obs_set_output_source(8, sb->source);
-
-		if (event == OBS_FRONTEND_EVENT_FINISHED_LOADING)
-			obs_frontend_add_dock(dock);
-
 		break;
 	case OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP:
 		sb->ClearSoundboard();
@@ -355,16 +355,16 @@ obs_data_array_t *Soundboard::SaveSounds()
 
 	for (int i = 0; i < ui->soundList->count(); i++) {
 		QListWidgetItem *item = ui->soundList->item(i);
-		SoundData *sound = FindSoundByName(item->text());
+		SoundData *sound = SoundData::FindSoundByName(item->text());
 
 		OBSDataAutoRelease data = obs_data_create();
 		obs_data_set_string(data, "name",
-				    QT_TO_UTF8(GetSoundName(sound)));
+				    QT_TO_UTF8(SoundData::GetName(*sound)));
 		obs_data_set_string(data, "path",
-				    QT_TO_UTF8(GetSoundPath(sound)));
+				    QT_TO_UTF8(SoundData::GetPath(*sound)));
 
 		OBSDataArrayAutoRelease hotkeyArray =
-			obs_hotkey_save(GetSoundHotkey(sound));
+			obs_hotkey_save(SoundData::GetHotkey(*sound));
 		obs_data_set_array(data, "sound_hotkey", hotkeyArray);
 
 		obs_data_array_push_back(soundArray, data);
@@ -458,13 +458,12 @@ void Soundboard::LoadSource(obs_data_t *saveData)
 	if (sourceData) {
 			source = obs_load_private_source(sourceData);
 
-			if (!obs_obj_valid(source))
+			if (obs_obj_invalid(source))
 				return;
 
 			mediaControls->SetSource(source);
 			vol->SetSource(source);
 		}
-	}
 }
 
 void Soundboard::LoadSoundboard(obs_data_t *saveData)
@@ -569,25 +568,25 @@ void Soundboard::ClearSoundboard()
 		item = nullptr;
 	}
 
-	for (SoundData *sound : sounds) {
+	for (SoundData *sound : SoundData::sounds) {
 		obs_hotkey_unregister(sound->hotkey);
 		delete sound;
 		sound = nullptr;
 	}
 
-	sounds.clear();
+	SoundData::sounds.clear();
 	ui->soundList->clear();
 }
 
 void Soundboard::PlaySound(const QString &name)
 {
-	SoundData *sound = FindSoundByName(name);
+	SoundData *sound = SoundData::FindSoundByName(name);
 
 	if (!sound)
 		return;
 
 	OBSDataAutoRelease settings = obs_source_get_settings(source);
-	QString path = GetSoundPath(sound);
+	QString path = SoundData::GetPath(*sound);
 	QString lastPath = QT_UTF8(obs_data_get_string(settings, "local_file"));
 	QListWidgetItem *item = FindItem(ui->soundList, name);
 
@@ -631,18 +630,9 @@ void Soundboard::AddSound(const QString &name, const QString &path,
 	if (name.isEmpty() || path.isEmpty())
 		return;
 
-	QString hotkeyName = QTStr("SoundHotkey").arg(name);
-
 	QListWidgetItem *item = new QListWidgetItem(name);
 
-	struct SoundData *sound = new SoundData();
-	sound->path = path;
-	sound->name = name;
-	sound->hotkey = obs_hotkey_register_frontend(QT_TO_UTF8(hotkeyName),
-						     QT_TO_UTF8(hotkeyName),
-						     PlaySoundHotkey, sound);
-
-	sounds.emplace_back(sound);
+	SoundData *sound = new SoundData(name, path);
 
 	if (settings) {
 		OBSDataArrayAutoRelease hotkeyArray =
@@ -664,22 +654,22 @@ void Soundboard::EditSound(const QString &newName, const QString &newPath)
 	if (!si)
 		return;
 
-	SoundData *sound = FindSoundByName(si->text());
+	SoundData *sound = SoundData::FindSoundByName(si->text());
 
-	SetSoundPath(sound, newPath);
-	SetSoundName(sound, newName);
+	SoundData::SetPath(*sound, newPath);
+	SoundData::SetName(*sound, newName);
 
 	si->setText(newName);
 
 	QString hotkeyName = QTStr("SoundHotkey").arg(newName);
-	obs_hotkey_id hotkey = GetSoundHotkey(sound);
+	obs_hotkey_id hotkey = SoundData::GetHotkey(*sound);
 	obs_hotkey_set_name(hotkey, QT_TO_UTF8(hotkeyName));
 	obs_hotkey_set_description(hotkey, QT_TO_UTF8(hotkeyName));
 }
 
-static QString GetDefaultString(QListWidget *list, const QString &name)
+static QString GetDefaultString(const QString &name)
 {
-	if (!NameExists(list, name))
+	if (!NameExists(name))
 		return name;
 
 	int i = 2;
@@ -687,7 +677,7 @@ static QString GetDefaultString(QListWidget *list, const QString &name)
 	for (;;) {
 		QString out = name + " " + QString::number(i);
 
-		if (!NameExists(list, out))
+		if (!NameExists(out))
 			return out;
 
 		i++;
@@ -698,7 +688,7 @@ void Soundboard::on_actionAddSound_triggered()
 {
 	SoundEdit edit(this);
 	edit.ui->nameEdit->setText(
-		GetDefaultString(ui->soundList, QTStr("Sound")));
+		GetDefaultString(QTStr("Sound")));
 	edit.setWindowTitle(QTStr("AddSound"));
 	edit.exec();
 }
@@ -715,9 +705,9 @@ void Soundboard::on_actionEditSound_triggered()
 	edit.origText = si->text();
 	edit.editMode = true;
 
-	SoundData *sound = FindSoundByName(si->text());
-	edit.ui->nameEdit->setText(sound->name);
-	edit.ui->fileEdit->setText(sound->path);
+	SoundData *sound = SoundData::FindSoundByName(si->text());
+	edit.ui->nameEdit->setText(SoundData::GetName(*sound));
+	edit.ui->fileEdit->setText(SoundData::GetPath(*sound));
 
 	edit.exec();
 
@@ -744,18 +734,13 @@ void Soundboard::on_actionRemoveSound_triggered()
 	if (reply == QMessageBox::No)
 		return;
 
-	for (size_t i = 0; i < sounds.size(); i++) {
-		SoundData *sound = sounds.at(i);
+	SoundData *sound = SoundData::FindSoundByName(si->text());
 
-		if (sound->name == si->text()) {
-			obs_hotkey_unregister(sound->hotkey);
+	if (!sound)
+		return;
 
-			delete sound;
-			sound = nullptr;
-			sounds.erase(sounds.begin() + i);
-			break;
-		}
-	}
+	delete sound;
+	sound = nullptr;
 
 	delete si;
 	si = nullptr;
@@ -794,9 +779,9 @@ void Soundboard::DuplicateSound()
 	if (!si)
 		return;
 
-	SoundData *sound = FindSoundByName(si->text());
-	AddSound(GetDefaultString(ui->soundList, GetSoundName(sound)),
-		 GetSoundPath(sound));
+	SoundData *sound = SoundData::FindSoundByName(si->text());
+	AddSound(GetDefaultString(SoundData::GetName(*sound)),
+		 SoundData::GetPath(*sound));
 }
 
 void Soundboard::ResetWidgets()
@@ -831,10 +816,10 @@ void Soundboard::on_soundList_customContextMenuRequested(const QPoint &pos)
 
 	bool grid = ui->soundList->GetGridMode();
 
-	QMenu view(QTStr("View"), this);
-	view.addAction(QTStr("Reset"), this, SLOT(ResetWidgets()));
+	QMenu view(MainStr("View"), this);
+	view.addAction(MainStr("Reset"), this, SLOT(ResetWidgets()));
 	view.addSeparator();
-	view.addAction(grid ? QTStr("ListMode") : QTStr("GridMode"), this,
+	view.addAction(grid ? MainStr("ListMode") : MainStr("GridMode"), this,
 		       SLOT(SetGrid()));
 	view.addSeparator();
 
@@ -861,24 +846,24 @@ void Soundboard::on_soundList_customContextMenuRequested(const QPoint &pos)
 
 	QMenu popup(this);
 
-	popup.addAction(QTStr("Add"), this,
+	popup.addAction(MainStr("Add"), this,
 			SLOT(on_actionAddSound_triggered()));
 	popup.addSeparator();
 
 	if (item) {
-		popup.addAction(QTStr("Edit"), this,
+		popup.addAction(MainStr("Edit"), this,
 				SLOT(on_actionEditSound_triggered()));
-		popup.addAction(QTStr("Remove"), this,
+		popup.addAction(MainStr("Remove"), this,
 				SLOT(on_actionRemoveSound_triggered()));
-		popup.addAction(QTStr("Duplicate"), this,
+		popup.addAction(MainStr("Duplicate"), this,
 				SLOT(DuplicateSound()));
 		popup.addSeparator();
 	}
 
 	popup.addSeparator();
 
-	popup.addAction(QTStr("Filters"), this, SLOT(OpenFilters()));
-	popup.addAction(QTStr("Basic.AdvAudio"), this, SLOT(OpenAdvAudio()));
+	popup.addAction(MainStr("Filters"), this, SLOT(OpenFilters()));
+	popup.addAction(MainStr("Basic.AdvAudio"), this, SLOT(OpenAdvAudio()));
 	popup.addSeparator();
 	popup.addMenu(&view);
 
@@ -918,7 +903,7 @@ void Soundboard::ToggleLockVolume(bool checked)
 
 void Soundboard::VolControlContextMenu()
 {
-	QAction lockAction(QTStr("LockVolume"));
+	QAction lockAction(MainStr("LockVolume"));
 	lockAction.setCheckable(true);
 	lockAction.setChecked(lockVolume);
 	QObject::connect(&lockAction, SIGNAL(toggled(bool)), this,
@@ -927,8 +912,8 @@ void Soundboard::VolControlContextMenu()
 	QMenu popup(this);
 	popup.addAction(&lockAction);
 	popup.addSeparator();
-	popup.addAction(QTStr("Filters"), this, SLOT(OpenFilters()));
-	popup.addAction(QTStr("Basic.AdvAudio"), this, SLOT(OpenAdvAudio()));
+	popup.addAction(MainStr("Filters"), this, SLOT(OpenFilters()));
+	popup.addAction(MainStr("Basic.AdvAudio"), this, SLOT(OpenAdvAudio()));
 	popup.exec(QCursor::pos());
 }
 
@@ -945,7 +930,7 @@ void Soundboard::EditSoundListItem()
 	prevName = item->text();
 
 	Qt::ItemFlags flags = item->flags();
-	SoundData *sound = FindSoundByName(item->text());
+	SoundData *sound = SoundData::FindSoundByName(item->text());
 
 	item->setText(sound->name);
 	item->setFlags(flags | Qt::ItemIsEditable);
@@ -958,8 +943,10 @@ void Soundboard::EditSoundListItem()
 void Soundboard::SoundListNameEdited(QWidget *editor,
 				     QAbstractItemDelegate::EndEditHint endHint)
 {
+	UNUSED_PARAMETER(endHint);
+
 	QListWidgetItem *item = ui->soundList->currentItem();
-	SoundData *sound = FindSoundByName(prevName);
+	SoundData *sound = SoundData::FindSoundByName(prevName);
 	QLineEdit *edit = qobject_cast<QLineEdit *>(editor);
 	QString name = edit->text().trimmed();
 
@@ -968,53 +955,16 @@ void Soundboard::SoundListNameEdited(QWidget *editor,
 	if (name == prevName)
 		item->setText(prevName);
 	else if (name.isEmpty())
-		QMessageBox::warning(this, QTStr("EmptyName.Title"),
-				     QTStr("EmptyName.Text"));
-	else if (NameExists(ui->soundList, name))
-		QMessageBox::warning(this, QTStr("NameExists.Title"),
-				     QTStr("NameExists.Text"));
+		QMessageBox::warning(this, MainStr("EmptyName.Title"),
+				     MainStr("EmptyName.Text"));
+	else if (NameExists(name))
+		QMessageBox::warning(this, MainStr("NameExists.Title"),
+				     MainStr("NameExists.Text"));
 	else
 		EditSound(name, sound->path);
 
 	editActive = false;
 	prevName = "";
-}
-
-QString Soundboard::GetSoundName(SoundData *sound)
-{
-	return sound ? sound->name : "";
-}
-
-QString Soundboard::GetSoundPath(SoundData *sound)
-{
-	return sound ? sound->path : "";
-}
-
-void Soundboard::SetSoundName(SoundData *sound, const QString &newName)
-{
-	if (sound)
-		sound->name = newName;
-}
-
-void Soundboard::SetSoundPath(SoundData *sound, const QString &newPath)
-{
-	if (sound)
-		sound->path = newPath;
-}
-
-obs_hotkey_id Soundboard::GetSoundHotkey(SoundData *sound)
-{
-	return sound ? sound->hotkey : OBS_INVALID_HOTKEY_ID;
-}
-
-SoundData *Soundboard::FindSoundByName(const QString &name)
-{
-	for (SoundData *sound : sounds) {
-		if (sound->name == name)
-			return sound;
-	}
-
-	return nullptr;
 }
 
 OBS_DECLARE_MODULE()
@@ -1049,6 +999,8 @@ void obs_module_post_load(void)
 	dock->resize(400, 400);
 	dock->setFloating(true);
 	dock->hide();
+
+	obs_frontend_add_dock(dock);
 
 	obs_frontend_pop_ui_translation();
 }

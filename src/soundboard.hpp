@@ -2,23 +2,18 @@
 
 #include "obs.hpp"
 #include <QWidget>
-#include <QListWidget>
 #include <QStyledItemDelegate>
 #include <vector>
 #include <string>
 #include <memory>
-#include <scene-tree.hpp>
-#include <volume-control.hpp>
-#include <media-controls.hpp>
 
 #include "ui_Soundboard.h"
 #include "ui_SoundEdit.h"
 
-struct SoundData {
-	QString name = "";
-	QString path = "";
-	obs_hotkey_id hotkey = OBS_INVALID_HOTKEY_ID;
-};
+class QListWidget;
+class SceneTree;
+class VolControl;
+class MediaControls;
 
 class ListRenameDelegate : public QStyledItemDelegate {
 	Q_OBJECT
@@ -77,14 +72,6 @@ public:
 
 	MediaControls *mediaControls = nullptr;
 	VolControl *vol = nullptr;
-
-	std::vector<SoundData *> sounds;
-	QString GetSoundName(SoundData *sound);
-	QString GetSoundPath(SoundData *sound);
-	void SetSoundName(SoundData *sound, const QString &newName);
-	void SetSoundPath(SoundData *sound, const QString &newPath);
-	obs_hotkey_id GetSoundHotkey(SoundData *sound);
-	SoundData *FindSoundByName(const QString &name);
 
 private:
 	void AddSound(const QString &name, const QString &path,
