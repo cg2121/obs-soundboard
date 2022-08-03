@@ -47,8 +47,7 @@ target_sources(
           "${CMAKE_SOURCE_DIR}/src/balance-slider.hpp"
           "${CMAKE_SOURCE_DIR}/src/clickable-label.hpp"
           "${CMAKE_SOURCE_DIR}/src/media-controls.hpp"
-          "${CMAKE_SOURCE_DIR}/src/media-slider.hpp"
-)
+          "${CMAKE_SOURCE_DIR}/src/media-slider.hpp")
 
 # /!\ TAKE NOTE: No need to edit things past this point /!\
 
