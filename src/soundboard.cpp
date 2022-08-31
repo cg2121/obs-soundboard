@@ -300,8 +300,7 @@ obs_data_array_t *Soundboard::SaveSounds()
 				    QT_TO_UTF8(SoundData::GetName(*sound)));
 		obs_data_set_string(d, "path",
 				    QT_TO_UTF8(SoundData::GetPath(*sound)));
-		obs_data_set_bool(d, "loop",
-				  SoundData::LoopingEnabled(*sound));
+		obs_data_set_bool(d, "loop", SoundData::LoopingEnabled(*sound));
 
 		OBSDataArrayAutoRelease hotkeyArray =
 			obs_hotkey_save(SoundData::GetHotkey(*sound));
