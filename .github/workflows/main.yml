@@ -5,6 +5,7 @@ on:
     paths-ignore:
       - '**.md'
     branches:
+      - master
       - main
     tags:
       - '*'
@@ -12,10 +13,8 @@ on:
     paths-ignore:
       - '**.md'
     branches:
+      - master
       - main
-
-env:
-  PLUGIN_NAME: 'obs-soundboard'
 
 jobs:
   clang_check:
@@ -109,7 +108,7 @@ jobs:
 
       - name: Restore Compilation Cache
         id: ccache-cache
-        uses: actions/cache@v2.1.7
+        uses: actions/cache@v3
         with:
           path: ${{ github.workspace }}/.ccache
           key: macos-${{ matrix.arch }}-ccache-plugin-${{ steps.setup.outputs.ccacheDate }}
@@ -166,8 +165,8 @@ jobs:
         if: ${{ success() && (github.event_name != 'pull_request' || steps.seekingTesters.outputs.found == 'true') }}
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ env.PLUGIN_NAME }}-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}
-          path: ${{ github.workspace }}/plugin/release/${{ env.PLUGIN_NAME }}-*-macos-${{ matrix.arch }}.pkg
+          name: ${{ github.event.repository.name }}-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}
+          path: ${{ github.workspace }}/plugin/release/${{ github.event.repository.name }}-*-macos-${{ matrix.arch }}.pkg
 
   linux_build:
     name: 02 - Linux
@@ -208,7 +207,7 @@ jobs:
 
       - name: Restore Compilation Cache
         id: ccache-cache
-        uses: actions/cache@v2.1.7
+        uses: actions/cache@v3
         with:
           path: ${{ github.workspace }}/.ccache
           key: linux-${{ matrix.arch }}-ccache-plugin-${{ steps.setup.outputs.ccacheDate }}
@@ -244,8 +243,8 @@ jobs:
         if: ${{ success() && (github.event_name != 'pull_request' || steps.seekingTesters.outputs.found == 'true') }}
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ env.PLUGIN_NAME }}-linux-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}
-          path: ${{ github.workspace }}/plugin/release/${{ env.PLUGIN_NAME }}-*-linux-${{ matrix.arch }}.*
+          name: ${{ github.event.repository.name }}-linux-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}
+          path: ${{ github.workspace }}/plugin/release/${{ github.event.repository.name }}-*-linux-${{ matrix.arch }}.*
 
   windows_build:
     name: 02 - Windows
@@ -324,8 +323,8 @@ jobs:
         if: ${{ success() && (github.event_name != 'pull_request' || steps.seekingTesters.outputs.found == 'true') }}
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ env.PLUGIN_NAME }}-windows-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}
-          path: ${{ github.workspace }}/plugin/release/${{ env.PLUGIN_NAME }}-*.zip
+          name: ${{ github.event.repository.name }}-windows-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}
+          path: ${{ github.workspace }}/plugin/release/${{ github.event.repository.name }}-*.zip
 
       - name: Package Plugin Installer
         if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' }}
@@ -340,9 +339,8 @@ jobs:
         if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' }}
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ env.PLUGIN_NAME }}-windows-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}-installer
-          path: ${{ github.workspace }}/plugin/release/${{ env.PLUGIN_NAME }}-*.exe
-
+          name: ${{ github.event.repository.name }}-windows-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}-installer
+          path: ${{ github.workspace }}/plugin/release/${{ github.event.repository.name }}-*.exe
 
   make-release:
     name: 03 - Create and upload release
@@ -358,8 +356,6 @@ jobs:
         run: |
           ## METADATA SCRIPT
           echo "::set-output name=version::${GITHUB_REF/refs\/tags\//}"
-          echo "::set-output name=date::$(date +"%Y-%m-%d")"
-          echo '::set-output name=commitHash::${{ needs.macos_build.outputs.commitHash }}'
 
       - name: Download build artifacts
         uses: actions/download-artifact@v3
@@ -378,14 +374,12 @@ jobs:
         uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5
         with:
           draft: false
-          prerelease: false
+          prerelease: ${{ contains(steps.metadata.outputs.version, 'rc') || contains(steps.metadata.outputs.version, 'beta') }}
           tag_name: ${{ steps.metadata.outputs.version }}
-          name: "${{ env.PLUGIN_NAME }} Build ${{ steps.metadata.outputs.version }}"
+          name: "${{ github.event.repository.name }} ${{ steps.metadata.outputs.version }}"
           body_path: ${{ github.workspace }}/CHECKSUMS.txt
           files: |
-            ${{ github.workspace }}/${{ env.PLUGIN_NAME }}-windows-x64-${{ steps.metadata.outputs.commitHash }}/*.zip
-            ${{ github.workspace }}/${{ env.PLUGIN_NAME }}-windows-x64-${{ steps.metadata.outputs.commitHash }}-installer/*.exe
-            ${{ github.workspace }}/${{ env.PLUGIN_NAME }}-linux-x86_64-${{ steps.metadata.outputs.commitHash }}/*.deb
-            ${{ github.workspace }}/${{ env.PLUGIN_NAME }}-macos-x86_64-${{ steps.metadata.outputs.commitHash }}/*.pkg
-            ${{ github.workspace }}/${{ env.PLUGIN_NAME }}-macos-arm64-${{ steps.metadata.outputs.commitHash }}/*.pkg
-            ${{ github.workspace }}/${{ env.PLUGIN_NAME }}-macos-universal-${{ steps.metadata.outputs.commitHash }}/*.pkg
+            ${{ github.workspace }}/**/*.zip
+            ${{ github.workspace }}/**/*.exe
+            ${{ github.workspace }}/**/*.deb
+            ${{ github.workspace }}/**/*.pkg

@@ -37,7 +37,7 @@ fi
 
 find . -type d \( \
     -path ./\*build\* -o \
-    -path ./\*release\* -o \
+    -path ./release -o \
     -path ./deps/jansson -o \
     -path ./plugins/decklink/\*/decklink-sdk -o \
     -path ./plugins/enc-amf -o \
