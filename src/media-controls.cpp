@@ -231,12 +231,9 @@ void MediaControls::RefreshControls()
 	source = OBSGetStrongRef(weakSource);
 
 	uint32_t flags = 0;
-	const char *id = nullptr;
 
-	if (source) {
+	if (source)
 		flags = obs_source_get_output_flags(source);
-		id = obs_source_get_unversioned_id(source);
-	}
 
 	if (!source || !(flags & OBS_SOURCE_CONTROLLABLE_MEDIA)) {
 		SetRestartState();

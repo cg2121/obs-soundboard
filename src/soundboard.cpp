@@ -31,9 +31,6 @@ SoundEdit::SoundEdit(QWidget *parent) : QDialog(parent), ui(new Ui_SoundEdit)
 {
 	ui->setupUi(this);
 	ui->fileEdit->setReadOnly(true);
-
-	ui->buttonBox->button(QDialogButtonBox::Ok)->setIcon(QIcon());
-	ui->buttonBox->button(QDialogButtonBox::Cancel)->setIcon(QIcon());
 }
 
 void SoundEdit::on_browseButton_clicked()
@@ -303,9 +300,8 @@ obs_data_array_t *Soundboard::SaveSounds()
 				    QT_TO_UTF8(SoundData::GetName(*sound)));
 		obs_data_set_string(data, "path",
 				    QT_TO_UTF8(SoundData::GetPath(*sound)));
-		obs_data_set_bool(
-			data, "loop",
-			SoundData::LoopingEnabled(*sound));
+		obs_data_set_bool(data, "loop",
+				  SoundData::LoopingEnabled(*sound));
 
 		OBSDataArrayAutoRelease hotkeyArray =
 			obs_hotkey_save(SoundData::GetHotkey(*sound));
@@ -510,15 +506,12 @@ void Soundboard::ClearSoundboard()
 
 void Soundboard::PlaySound(const QString &name)
 {
+	prevSound = name;
+
 	if (name.isEmpty()) {
 		OBSDataAutoRelease settings = obs_source_get_settings(source);
 		obs_source_reset_settings(source, settings);
-		obs_source_media_stop(source);
-		return;
-	}
-
-	if (name == prevSound) {
-		obs_source_media_restart(source);
+		obs_source_update(source, settings);
 		return;
 	}
 
@@ -529,15 +522,6 @@ void Soundboard::PlaySound(const QString &name)
 
 	QListWidgetItem *item = FindItem(ui->soundList, name);
 	QString path = SoundData::GetPath(*sound);
-
-	if (!os_file_exists(QT_TO_UTF8(path))) {
-		ui->soundList->blockSignals(true);
-		ui->soundList->setCurrentItem(item);
-		ui->soundList->blockSignals(false);
-		QMessageBox::critical(this, QTStr("FileNotFound.Title"),
-				      QTStr("FileNotFound.Text"));
-		return;
-	}
 
 	OBSDataAutoRelease settings = obs_data_create();
 	obs_data_set_bool(settings, "looping",
@@ -559,7 +543,8 @@ static void PlaySoundHotkey(void *data, obs_hotkey_id, obs_hotkey_t *,
 
 	if (pressed)
 		QMetaObject::invokeMethod(sb, "PlaySound", Qt::AutoConnection,
-					  Q_ARG(QString, SoundData::GetName(*sound)));
+					  Q_ARG(QString,
+						SoundData::GetName(*sound)));
 }
 
 void Soundboard::AddSound(const QString &name, const QString &path, bool loop,
@@ -573,9 +558,9 @@ void Soundboard::AddSound(const QString &name, const QString &path, bool loop,
 	SoundData *sound = new SoundData(name, path, loop);
 
 	QString hotkeyName = QTStr("SoundHotkey").arg(name);
-	obs_hotkey_id hotkey = obs_hotkey_register_frontend(QT_TO_UTF8(hotkeyName),
-						     QT_TO_UTF8(hotkeyName),
-						     PlaySoundHotkey, sound);
+	obs_hotkey_id hotkey = obs_hotkey_register_frontend(
+		QT_TO_UTF8(hotkeyName), QT_TO_UTF8(hotkeyName), PlaySoundHotkey,
+		sound);
 	SoundData::SetHotkey(*sound, hotkey);
 
 	if (settings) {
@@ -671,14 +656,10 @@ void Soundboard::on_soundList_itemClicked(QListWidgetItem *item)
 {
 	QString text = item->text();
 
-	if (prevSound == text) {
-		obs_source_media_stop(source);
+	if (prevSound == text)
 		text = "";
-	} else {
-		PlaySound(item->text());
-	}
 
-	prevSound = text;
+	PlaySound(text);
 }
 
 void Soundboard::on_actionRemoveSound_triggered()
@@ -708,7 +689,6 @@ void Soundboard::on_actionRemoveSound_triggered()
 	si = nullptr;
 
 	PlaySound("");
-	prevSound = "";
 }
 
 void Soundboard::PlaySound()
@@ -723,12 +703,12 @@ void Soundboard::PauseSound()
 
 void Soundboard::StopSound()
 {
-	obs_source_media_stop(source);
+	PlaySound("");
 }
 
 void Soundboard::RestartSound()
 {
-	obs_source_media_restart(source);
+	PlaySound(ui->soundList->currentItem()->text());
 }
 
 void Soundboard::SetGrid()
@@ -773,8 +753,9 @@ void Soundboard::on_soundList_customContextMenuRequested(const QPoint &pos)
 	}
 
 	popup.addSeparator();
-	popup.addAction(grid ? MainStr("Basic.Main.ListMode") : MainStr("Basic.Main.GridMode"), this,
-			SLOT(SetGrid()));
+	popup.addAction(grid ? MainStr("Basic.Main.ListMode")
+			     : MainStr("Basic.Main.GridMode"),
+			this, SLOT(SetGrid()));
 
 	popup.exec(QCursor::pos());
 }
@@ -816,12 +797,6 @@ OBS_MODULE_USE_DEFAULT_LOCALE("Soundboard", "en-US")
 
 bool obs_module_load(void)
 {
-	if (LIBOBS_API_VER < MAKE_SEMANTIC_VERSION(28, 0, 0)) {
-		blog(LOG_ERROR,
-		     "Soundboard plugin requires OBS 28.0.0 or newer");
-		return false;
-	}
-
 	blog(LOG_INFO, "Soundboard plugin version %s is loaded",
 	     PLUGIN_VERSION);
 

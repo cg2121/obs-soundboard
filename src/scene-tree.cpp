@@ -1,6 +1,5 @@
 #include "obs.hpp"
 #include "scene-tree.hpp"
-#include "obs-app.hpp"
 
 #include <QSizePolicy>
 #include <QScrollBar>
@@ -255,4 +254,3 @@ void SceneTree::selectionChanged(const QItemSelection &selected,
 	if (selected.count() == 0)
 		setCurrentRow(deselected.indexes().front().row());
 }
-
