@@ -403,8 +403,6 @@ void OBSAdvAudioCtrl::SourceMixersChanged(uint32_t mixers)
 
 void OBSAdvAudioCtrl::volumeChanged(double db)
 {
-	float prev = obs_source_get_volume(source);
-
 	if (db < MIN_DB) {
 		volume->setSpecialValueText("-inf dB");
 		db = -INFINITY;
@@ -416,7 +414,6 @@ void OBSAdvAudioCtrl::volumeChanged(double db)
 
 void OBSAdvAudioCtrl::percentChanged(int percent)
 {
-	float prev = obs_source_get_volume(source);
 	float val = (float)percent / 100.0f;
 
 	obs_source_set_volume(source, val);
@@ -450,7 +447,6 @@ void OBSAdvAudioCtrl::downmixMonoChanged(bool val)
 
 void OBSAdvAudioCtrl::balanceChanged(int val)
 {
-	float prev = obs_source_get_balance_value(source);
 	float bal = (float)val / 100.0f;
 
 	if (abs(50 - val) < 10) {
@@ -481,8 +477,6 @@ void OBSAdvAudioCtrl::syncOffsetChanged(int milliseconds)
 
 void OBSAdvAudioCtrl::monitoringTypeChanged(int index)
 {
-	obs_monitoring_type prev = obs_source_get_monitoring_type(source);
-
 	obs_monitoring_type mt =
 		(obs_monitoring_type)monitoringType->itemData(index).toInt();
 	obs_source_set_monitoring_type(source, mt);

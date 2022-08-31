@@ -670,7 +670,6 @@ void Soundboard::on_actionEditSound_triggered()
 void Soundboard::on_soundList_itemClicked(QListWidgetItem *item)
 {
 	QString text = item->text();
-	SoundData *sound = SoundData::FindSoundByName(text);
 
 	if (prevSound == text) {
 		obs_source_media_stop(source);
