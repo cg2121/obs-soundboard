@@ -5,18 +5,20 @@
 #include <vector>
 
 class SoundData {
-public:
+private:
 	static std::vector<SoundData *> sounds;
 	QString name = "";
 	QString path = "";
 	obs_hotkey_id hotkey = OBS_INVALID_HOTKEY_ID;
 	bool loop = false;
 
-	SoundData(const QString &name_, const QString &path_);
+public:
+	SoundData(const QString &name_, const QString &path_, bool loop_);
 	~SoundData();
 
 	static void SetName(SoundData &sound, const QString &newName);
 	static void SetPath(SoundData &sound, const QString &newPath);
+	static void SetHotkey(SoundData &sound, const obs_hotkey_id &hotkey);
 
 	static QString GetName(const SoundData &sound);
 	static QString GetPath(const SoundData &sound);
@@ -25,4 +27,5 @@ public:
 
 	static void SetLoopingEnabled(SoundData &sound, bool loop);
 	static bool LoopingEnabled(const SoundData &sound);
+	static std::vector<SoundData *> GetSounds();
 };

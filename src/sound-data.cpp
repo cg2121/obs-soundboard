@@ -2,8 +2,8 @@
 
 std::vector<SoundData *> SoundData::sounds;
 
-SoundData::SoundData(const QString &name_, const QString &path_)
-	: name(name_), path(path_)
+SoundData::SoundData(const QString &name_, const QString &path_, bool loop_)
+	: name(name_), path(path_), loop(loop_)
 {
 	sounds.emplace_back(this);
 }
@@ -40,6 +40,11 @@ void SoundData::SetPath(SoundData &sound, const QString &newPath)
 	sound.path = newPath;
 }
 
+void SoundData::SetHotkey(SoundData &sound, const obs_hotkey_id &hotkey)
+{
+	sound.hotkey = hotkey;
+}
+
 SoundData *SoundData::FindSoundByName(const QString &name)
 {
 	for (auto &sound : sounds) {
@@ -58,4 +63,9 @@ void SoundData::SetLoopingEnabled(SoundData &sound, bool loop)
 bool SoundData::LoopingEnabled(const SoundData &sound)
 {
 	return sound.loop;
+}
+
+std::vector<SoundData *> SoundData::GetSounds()
+{
+	return sounds;
 }

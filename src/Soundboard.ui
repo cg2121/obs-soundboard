@@ -73,7 +73,13 @@
          </layout>
         </item>
         <item>
+         <widget class="MediaControls" name="mediaControls" native="true"/>
+        </item>
+        <item>
          <widget class="QToolBar" name="soundboardToolbar">
+          <property name="styleSheet">
+           <string notr="true">QToolBar { background: transparent; }</string>
+          </property>
           <property name="movable">
            <bool>false</bool>
           </property>
@@ -140,6 +146,12 @@
    <class>SceneTree</class>
    <extends>QListWidget</extends>
    <header>scene-tree.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>MediaControls</class>
+   <extends>QWidget</extends>
+   <header>media-controls.hpp</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>

@@ -13,7 +13,7 @@
 
 #define QT_UTF8(str) QString::fromUtf8(str, -1)
 #define QT_TO_UTF8(str) str.toUtf8().constData()
-#define QTStr(str) QT_UTF8(obs_module_text(str))
+#define QTStr(str) QT_UTF8(obs_frontend_get_locale_string(str))
 
 #ifndef NSEC_PER_MSEC
 #define NSEC_PER_MSEC 1000000

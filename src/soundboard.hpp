@@ -2,9 +2,7 @@
 
 #include "obs.hpp"
 #include <QWidget>
-#include <QStyledItemDelegate>
-#include <vector>
-#include <string>
+#include <QPointer>
 #include <memory>
 
 #include "ui_Soundboard.h"
@@ -14,18 +12,6 @@ class QListWidget;
 class SceneTree;
 class VolControl;
 class MediaControls;
-
-class ListRenameDelegate : public QStyledItemDelegate {
-	Q_OBJECT
-
-public:
-	ListRenameDelegate(QObject *parent);
-	virtual void setEditorData(QWidget *editor,
-				   const QModelIndex &index) const override;
-
-protected:
-	virtual bool eventFilter(QObject *editor, QEvent *event) override;
-};
 
 class SoundEdit : public QDialog {
 	Q_OBJECT
@@ -65,24 +51,20 @@ public:
 
 	bool lockVolume = false;
 	bool usePercent = false;
-	bool editActive = false;
 
 	void SaveSoundboard(obs_data_t *saveData);
 	void LoadSoundboard(obs_data_t *saveData);
 
-	MediaControls *mediaControls = nullptr;
-	VolControl *vol = nullptr;
+	QPointer<VolControl> vol;
 
 private:
-	void AddSound(const QString &name, const QString &path,
+	void AddSound(const QString &name, const QString &path, bool loop,
 		      obs_data_t *settings = nullptr);
-	void EditSound(const QString &newName, const QString &newPath);
+	void EditSound(const QString &newName, const QString &newPath,
+		       bool loop);
 
 	QString prevName = "";
-
-	bool volVisible = true;
-	bool mediaControlsVisible = true;
-	bool toolbarVisible = true;
+	QString prevSound = "";
 
 private slots:
 	void on_soundList_itemClicked(QListWidgetItem *item);
@@ -94,23 +76,14 @@ private slots:
 	void DuplicateSound();
 	void SoundboardSetMuted(bool mute);
 	void OpenFilters();
-	void OpenAdvAudio();
 	void ToggleLockVolume(bool checked);
-	void EditSoundListItem();
-	void SoundListNameEdited(QWidget *editor,
-				 QAbstractItemDelegate::EndEditHint endHint);
 
 	void PlaySound();
 	void PauseSound();
 	void RestartSound();
 	void StopSound();
 
-	void VolumeControlsToggled(bool checked);
-	void MediaControlsToggled(bool checked);
-	void ToolbarToggled(bool checked);
-
 public slots:
 	void PlaySound(const QString &name);
 	void VolControlContextMenu();
-	void ResetWidgets();
 };
