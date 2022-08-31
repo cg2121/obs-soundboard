@@ -16,16 +16,34 @@ set(MACOS_BUNDLEID "com.obs-plugin.${CMAKE_PROJECT_NAME}")
 # Replace `me@contoso.com` with the maintainer email address you want to put in Linux packages
 set(LINUX_MAINTAINER_EMAIL "claytong1214@gmail.com")
 
-file(
-  GLOB_RECURSE
-  SRC_FILES
-  CONFIGURE_DEPENDS
-  "src/*.cpp"
-  "src/*.hpp"
-  "src/*.c"
-  "src/*.h"
-  "src/*.ui")
-target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${SRC_FILES})
+# Add your custom source files here - header files are optional and only required for visibility
+# e.g. in Xcode or Visual Studio
+target_sources(
+  ${CMAKE_PROJECT_NAME}
+  PRIVATE src/adv-audio-control.cpp
+          src/adv-audio-control.hpp
+          src/balance-slider.hpp
+          src/clickable-label.hpp
+          src/media-controls.cpp
+          src/media-controls.hpp
+          src/media-controls.ui
+          src/media-slider.cpp
+          src/media-slider.hpp
+          src/mute-checkbox.hpp
+          src/scene-tree.cpp
+          src/scene-tree.hpp
+          src/slider-absoluteset-style.cpp
+          src/slider-absoluteset-style.hpp
+          src/slider-ignorewheel.cpp
+          src/slider-ignorewheel.hpp
+          src/soundboard.cpp
+          src/soundboard.hpp
+          src/Soundboard.ui
+          src/sound-data.cpp
+          src/sound-data.hpp
+          src/SoundEdit.ui
+          src/volume-control.cpp
+          src/volume-control.hpp)
 
 # Import libobs as main plugin dependency
 find_package(libobs REQUIRED)
