@@ -79,7 +79,7 @@ public slots:
 	void SourceBalanceChanged(int balance);
 
 	void volumeChanged(double db);
-	void percentChanged(int percent);
+	void percentChanged(int val_);
 	void downmixMonoChanged(bool checked);
 	void balanceChanged(int val);
 	void syncOffsetChanged(int milliseconds);

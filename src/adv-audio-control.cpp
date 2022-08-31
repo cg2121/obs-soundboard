@@ -412,9 +412,9 @@ void OBSAdvAudioCtrl::volumeChanged(double db)
 	obs_source_set_volume(source, val);
 }
 
-void OBSAdvAudioCtrl::percentChanged(int percent)
+void OBSAdvAudioCtrl::percentChanged(int val_)
 {
-	float val = (float)percent / 100.0f;
+	float val = (float)val_ / 100.0f;
 
 	obs_source_set_volume(source, val);
 }

@@ -177,9 +177,9 @@ Soundboard::Soundboard(QWidget *parent) : QWidget(parent), ui(new Ui_Soundboard)
 	ui->actionRemoveSound->setToolTip(QTStr("RemoveSound.Title"));
 	ui->actionEditSound->setToolTip(QTStr("EditSound"));
 
-	auto stop = [](void *data, obs_hotkey_id, obs_hotkey_t *,
+	auto stop = [](void *param, obs_hotkey_id, obs_hotkey_t *,
 		       bool pressed) {
-		Soundboard *sb = static_cast<Soundboard *>(data);
+		Soundboard *sb = static_cast<Soundboard *>(param);
 
 		if (pressed)
 			QMetaObject::invokeMethod(sb, "StopSound");
@@ -188,9 +188,9 @@ Soundboard::Soundboard(QWidget *parent) : QWidget(parent), ui(new Ui_Soundboard)
 	stopHotkey = obs_hotkey_register_frontend(
 		"Soundboard.Stop", QT_TO_UTF8(QTStr("StopHotkey")), stop, this);
 
-	auto restart = [](void *data, obs_hotkey_id, obs_hotkey_t *,
+	auto restart = [](void *param, obs_hotkey_id, obs_hotkey_t *,
 			  bool pressed) {
-		Soundboard *sb = static_cast<Soundboard *>(data);
+		Soundboard *sb = static_cast<Soundboard *>(param);
 
 		if (pressed)
 			QMetaObject::invokeMethod(sb, "RestartSound");
@@ -200,9 +200,9 @@ Soundboard::Soundboard(QWidget *parent) : QWidget(parent), ui(new Ui_Soundboard)
 		"Soundboard.Restart", QT_TO_UTF8(QTStr("RestartHotkey")),
 		restart, this);
 
-	auto mute = [](void *data, obs_hotkey_pair_id, obs_hotkey_t *,
+	auto mute = [](void *param, obs_hotkey_pair_id, obs_hotkey_t *,
 		       bool pressed) {
-		Soundboard *sb = static_cast<Soundboard *>(data);
+		Soundboard *sb = static_cast<Soundboard *>(param);
 		bool muted = obs_source_muted(sb->source);
 
 		if (!muted && pressed) {
@@ -216,9 +216,9 @@ Soundboard::Soundboard(QWidget *parent) : QWidget(parent), ui(new Ui_Soundboard)
 		return false;
 	};
 
-	auto unmute = [](void *data, obs_hotkey_pair_id, obs_hotkey_t *,
+	auto unmute = [](void *param, obs_hotkey_pair_id, obs_hotkey_t *,
 			 bool pressed) {
-		Soundboard *sb = static_cast<Soundboard *>(data);
+		Soundboard *sb = static_cast<Soundboard *>(param);
 		bool muted = obs_source_muted(sb->source);
 
 		if (muted && pressed) {
@@ -237,9 +237,9 @@ Soundboard::Soundboard(QWidget *parent) : QWidget(parent), ui(new Ui_Soundboard)
 		"Soundboard.Unmute", QT_TO_UTF8(QTStr("UnmuteHotkey")), mute,
 		unmute, this, this);
 
-	auto play = [](void *data, obs_hotkey_pair_id, obs_hotkey_t *,
+	auto play = [](void *param, obs_hotkey_pair_id, obs_hotkey_t *,
 		       bool pressed) {
-		Soundboard *sb = static_cast<Soundboard *>(data);
+		Soundboard *sb = static_cast<Soundboard *>(param);
 		bool paused = sb->ui->mediaControls->MediaPaused();
 
 		if (paused && pressed) {
@@ -250,9 +250,9 @@ Soundboard::Soundboard(QWidget *parent) : QWidget(parent), ui(new Ui_Soundboard)
 		return false;
 	};
 
-	auto pause = [](void *data, obs_hotkey_pair_id, obs_hotkey_t *,
+	auto pause = [](void *param, obs_hotkey_pair_id, obs_hotkey_t *,
 			bool pressed) {
-		Soundboard *sb = static_cast<Soundboard *>(data);
+		Soundboard *sb = static_cast<Soundboard *>(param);
 		bool paused = sb->ui->mediaControls->MediaPaused();
 
 		if (!paused && pressed) {
@@ -295,19 +295,19 @@ obs_data_array_t *Soundboard::SaveSounds()
 		QListWidgetItem *item = ui->soundList->item(i);
 		SoundData *sound = SoundData::FindSoundByName(item->text());
 
-		OBSDataAutoRelease data = obs_data_create();
-		obs_data_set_string(data, "name",
+		OBSDataAutoRelease d = obs_data_create();
+		obs_data_set_string(d, "name",
 				    QT_TO_UTF8(SoundData::GetName(*sound)));
-		obs_data_set_string(data, "path",
+		obs_data_set_string(d, "path",
 				    QT_TO_UTF8(SoundData::GetPath(*sound)));
-		obs_data_set_bool(data, "loop",
+		obs_data_set_bool(d, "loop",
 				  SoundData::LoopingEnabled(*sound));
 
 		OBSDataArrayAutoRelease hotkeyArray =
 			obs_hotkey_save(SoundData::GetHotkey(*sound));
-		obs_data_set_array(data, "sound_hotkey", hotkeyArray);
+		obs_data_set_array(d, "sound_hotkey", hotkeyArray);
 
-		obs_data_array_push_back(soundArray, data);
+		obs_data_array_push_back(soundArray, d);
 	}
 
 	return soundArray;
@@ -318,12 +318,12 @@ void Soundboard::LoadSounds(obs_data_array_t *array)
 	size_t num = obs_data_array_count(array);
 
 	for (size_t i = 0; i < num; i++) {
-		OBSDataAutoRelease data = obs_data_array_item(array, i);
-		const char *name = obs_data_get_string(data, "name");
-		const char *path = obs_data_get_string(data, "path");
-		bool loop = obs_data_get_bool(data, "loop");
+		OBSDataAutoRelease d = obs_data_array_item(array, i);
+		const char *name = obs_data_get_string(d, "name");
+		const char *path = obs_data_get_string(d, "path");
+		bool loop = obs_data_get_bool(d, "loop");
 
-		AddSound(QT_UTF8(name), QT_UTF8(path), loop, data);
+		AddSound(QT_UTF8(name), QT_UTF8(path), loop, d);
 	}
 }
 
@@ -797,7 +797,7 @@ OBS_MODULE_USE_DEFAULT_LOCALE("Soundboard", "en-US")
 
 bool obs_module_load(void)
 {
-	if (LIBOBS_API_VER < MAKE_SEMANTIC_VERSION(28, 0, 0)) {
+	if constexpr (LIBOBS_API_VER < MAKE_SEMANTIC_VERSION(28, 0, 0)) {
 		blog(LOG_ERROR,
 		     "Soundboard plugin requires OBS 28.0.0 or newer");
 		return false;
