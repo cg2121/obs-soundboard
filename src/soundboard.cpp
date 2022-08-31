@@ -797,6 +797,12 @@ OBS_MODULE_USE_DEFAULT_LOCALE("Soundboard", "en-US")
 
 bool obs_module_load(void)
 {
+	if (LIBOBS_API_VER < MAKE_SEMANTIC_VERSION(28, 0, 0)) {
+		blog(LOG_ERROR,
+		     "Soundboard plugin requires OBS 28.0.0 or newer");
+		return false;
+	}
+
 	blog(LOG_INFO, "Soundboard plugin version %s is loaded",
 	     PLUGIN_VERSION);
 
