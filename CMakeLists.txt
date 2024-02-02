@@ -39,8 +39,8 @@ target_sources(
           src/soundboard.cpp
           src/soundboard.hpp
           src/Soundboard.ui
-          src/sound-data.cpp
-          src/sound-data.hpp
+          src/media-data.cpp
+          src/media-data.hpp
           src/SoundEdit.ui
           src/volume-control.cpp
           src/volume-control.hpp)

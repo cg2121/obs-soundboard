@@ -20,7 +20,7 @@
 #include <volume-control.hpp>
 #include <media-controls.hpp>
 
-#include <sound-data.hpp>
+#include <media-data.hpp>
 
 #define QT_UTF8(str) QString::fromUtf8(str, -1)
 #define QT_TO_UTF8(str) str.toUtf8().constData()
@@ -53,7 +53,7 @@ void SoundEdit::on_browseButton_clicked()
 
 static bool NameExists(const QString &name)
 {
-	if (SoundData::FindSoundByName(name))
+	if (MediaData::FindMediaByName(name))
 		return true;
 
 	return false;
@@ -293,17 +293,17 @@ obs_data_array_t *Soundboard::SaveSounds()
 
 	for (int i = 0; i < ui->soundList->count(); i++) {
 		QListWidgetItem *item = ui->soundList->item(i);
-		SoundData *sound = SoundData::FindSoundByName(item->text());
+		MediaData *sound = MediaData::FindMediaByName(item->text());
 
 		OBSDataAutoRelease d = obs_data_create();
 		obs_data_set_string(d, "name",
-				    QT_TO_UTF8(SoundData::GetName(*sound)));
+				    QT_TO_UTF8(MediaData::GetName(*sound)));
 		obs_data_set_string(d, "path",
-				    QT_TO_UTF8(SoundData::GetPath(*sound)));
-		obs_data_set_bool(d, "loop", SoundData::LoopingEnabled(*sound));
+				    QT_TO_UTF8(MediaData::GetPath(*sound)));
+		obs_data_set_bool(d, "loop", MediaData::LoopingEnabled(*sound));
 
 		OBSDataArrayAutoRelease hotkeyArray =
-			obs_hotkey_save(SoundData::GetHotkey(*sound));
+			obs_hotkey_save(MediaData::GetHotkey(*sound));
 		obs_data_set_array(d, "sound_hotkey", hotkeyArray);
 
 		obs_data_array_push_back(soundArray, d);
@@ -492,7 +492,7 @@ void Soundboard::ClearSoundboard()
 		item = nullptr;
 	}
 
-	std::vector<SoundData *> sounds = SoundData::GetSounds();
+	std::vector<MediaData *> sounds = MediaData::GetMedia();
 
 	for (auto &sound : sounds) {
 		delete sound;
@@ -514,17 +514,17 @@ void Soundboard::PlaySound(const QString &name)
 		return;
 	}
 
-	SoundData *sound = SoundData::FindSoundByName(name);
+	MediaData *sound = MediaData::FindMediaByName(name);
 
 	if (!sound)
 		return;
 
 	QListWidgetItem *item = FindItem(ui->soundList, name);
-	QString path = SoundData::GetPath(*sound);
+	QString path = MediaData::GetPath(*sound);
 
 	OBSDataAutoRelease settings = obs_data_create();
 	obs_data_set_bool(settings, "looping",
-			  SoundData::LoopingEnabled(*sound));
+			  MediaData::LoopingEnabled(*sound));
 	obs_data_set_string(settings, "local_file", QT_TO_UTF8(path));
 	obs_data_set_bool(settings, "is_local_file", true);
 	obs_source_update(source, settings);
@@ -535,7 +535,7 @@ void Soundboard::PlaySound(const QString &name)
 static void PlaySoundHotkey(void *data, obs_hotkey_id, obs_hotkey_t *,
 			    bool pressed)
 {
-	SoundData *sound = static_cast<SoundData *>(data);
+	MediaData *sound = static_cast<MediaData *>(data);
 
 	QMainWindow *window = (QMainWindow *)obs_frontend_get_main_window();
 	Soundboard *sb = window->findChild<Soundboard *>("Soundboard");
@@ -543,7 +543,7 @@ static void PlaySoundHotkey(void *data, obs_hotkey_id, obs_hotkey_t *,
 	if (pressed)
 		QMetaObject::invokeMethod(sb, "PlaySound", Qt::AutoConnection,
 					  Q_ARG(QString,
-						SoundData::GetName(*sound)));
+						MediaData::GetName(*sound)));
 }
 
 void Soundboard::AddSound(const QString &name, const QString &path, bool loop,
@@ -554,18 +554,18 @@ void Soundboard::AddSound(const QString &name, const QString &path, bool loop,
 
 	QListWidgetItem *item = new QListWidgetItem(name);
 
-	SoundData *sound = new SoundData(name, path, loop);
+	MediaData *sound = new MediaData(name, path, loop);
 
 	QString hotkeyName = QTStr("SoundHotkey").arg(name);
 	obs_hotkey_id hotkey = obs_hotkey_register_frontend(
 		QT_TO_UTF8(hotkeyName), QT_TO_UTF8(hotkeyName), PlaySoundHotkey,
 		sound);
-	SoundData::SetHotkey(*sound, hotkey);
+	MediaData::SetHotkey(*sound, hotkey);
 
 	if (settings) {
 		OBSDataArrayAutoRelease hotkeyArray =
 			obs_data_get_array(settings, "sound_hotkey");
-		obs_hotkey_load(SoundData::GetHotkey(*sound), hotkeyArray);
+		obs_hotkey_load(MediaData::GetHotkey(*sound), hotkeyArray);
 	}
 
 	ui->soundList->addItem(item);
@@ -583,16 +583,16 @@ void Soundboard::EditSound(const QString &newName, const QString &newPath,
 	if (!si)
 		return;
 
-	SoundData *sound = SoundData::FindSoundByName(si->text());
+	MediaData *sound = MediaData::FindMediaByName(si->text());
 
-	SoundData::SetPath(*sound, newPath);
-	SoundData::SetName(*sound, newName);
-	SoundData::SetLoopingEnabled(*sound, loop);
+	MediaData::SetPath(*sound, newPath);
+	MediaData::SetName(*sound, newName);
+	MediaData::SetLoopingEnabled(*sound, loop);
 
 	si->setText(newName);
 
 	QString hotkeyName = QTStr("SoundHotkey").arg(newName);
-	obs_hotkey_id hotkey = SoundData::GetHotkey(*sound);
+	obs_hotkey_id hotkey = MediaData::GetHotkey(*sound);
 	obs_hotkey_set_name(hotkey, QT_TO_UTF8(hotkeyName));
 	obs_hotkey_set_description(hotkey, QT_TO_UTF8(hotkeyName));
 	PlaySound("");
@@ -640,10 +640,10 @@ void Soundboard::on_actionEditSound_triggered()
 	edit.ui->advAudioLayout->addWidget(&advAudio);
 	edit.editMode = true;
 
-	SoundData *sound = SoundData::FindSoundByName(si->text());
-	edit.ui->nameEdit->setText(SoundData::GetName(*sound));
-	edit.ui->fileEdit->setText(SoundData::GetPath(*sound));
-	edit.ui->loop->setChecked(SoundData::LoopingEnabled(*sound));
+	MediaData *sound = MediaData::FindMediaByName(si->text());
+	edit.ui->nameEdit->setText(MediaData::GetName(*sound));
+	edit.ui->fileEdit->setText(MediaData::GetPath(*sound));
+	edit.ui->loop->setChecked(MediaData::LoopingEnabled(*sound));
 
 	edit.adjustSize();
 	edit.exec();
@@ -676,7 +676,7 @@ void Soundboard::on_actionRemoveSound_triggered()
 	if (reply == QMessageBox::No)
 		return;
 
-	SoundData *sound = SoundData::FindSoundByName(si->text());
+	MediaData *sound = MediaData::FindMediaByName(si->text());
 
 	if (!sound)
 		return;
@@ -723,9 +723,9 @@ void Soundboard::DuplicateSound()
 	if (!si)
 		return;
 
-	SoundData *sound = SoundData::FindSoundByName(si->text());
-	AddSound(GetDefaultString(SoundData::GetName(*sound)),
-		 SoundData::GetPath(*sound), SoundData::LoopingEnabled(*sound));
+	MediaData *sound = MediaData::FindMediaByName(si->text());
+	AddSound(GetDefaultString(MediaData::GetName(*sound)),
+		 MediaData::GetPath(*sound), MediaData::LoopingEnabled(*sound));
 }
 
 void Soundboard::on_soundList_customContextMenuRequested(const QPoint &pos)
