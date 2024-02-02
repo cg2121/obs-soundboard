@@ -3,7 +3,7 @@
 #include "util/platform.h"
 #include "obs-hotkey.h"
 #include "util/util.hpp"
-#include "plugin-macros.generated.h"
+#include "plugin-support.h"
 #include "soundboard.hpp"
 #include <QAction>
 #include <QMainWindow>
@@ -128,7 +128,8 @@ static void OBSEvent(enum obs_frontend_event event, void *data)
 		if (obs_obj_invalid(sb->source)) {
 			source = obs_source_create(
 				"ffmpeg_source",
-				QT_TO_UTF8(QTStr("Soundboard")), nullptr, nullptr);
+				QT_TO_UTF8(QTStr("Soundboard")), nullptr,
+				nullptr);
 			obs_source_set_hidden(source, true);
 
 			sb->ui->mediaControls->SetSource(source);

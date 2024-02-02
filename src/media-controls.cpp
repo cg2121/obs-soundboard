@@ -38,7 +38,8 @@ void MediaControls::OBSMediaStarted(void *data, calldata_t *)
 }
 
 MediaControls::MediaControls(QWidget *parent)
-	: QWidget(parent), ui(new Ui::MediaControls)
+	: QWidget(parent),
+	  ui(new Ui::MediaControls)
 {
 	ui->setupUi(this);
 	ui->playPauseButton->setProperty("themeID", "playIcon");

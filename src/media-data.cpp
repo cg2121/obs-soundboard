@@ -3,7 +3,9 @@
 std::vector<MediaData *> MediaData::mediaItems;
 
 MediaData::MediaData(const QString &name_, const QString &path_, bool loop_)
-	: name(name_), path(path_), loop(loop_)
+	: name(name_),
+	  path(path_),
+	  loop(loop_)
 {
 	mediaItems.emplace_back(this);
 }
