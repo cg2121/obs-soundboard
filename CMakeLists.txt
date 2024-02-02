@@ -20,16 +20,12 @@ set(LINUX_MAINTAINER_EMAIL "claytong1214@gmail.com")
 # e.g. in Xcode or Visual Studio
 target_sources(
   ${CMAKE_PROJECT_NAME}
-  PRIVATE src/adv-audio-control.cpp
-          src/adv-audio-control.hpp
-          src/balance-slider.hpp
-          src/clickable-label.hpp
+  PRIVATE src/clickable-label.hpp
           src/media-controls.cpp
           src/media-controls.hpp
           src/media-controls.ui
           src/media-slider.cpp
           src/media-slider.hpp
-          src/mute-checkbox.hpp
           src/scene-tree.cpp
           src/scene-tree.hpp
           src/slider-absoluteset-style.cpp
@@ -41,9 +37,7 @@ target_sources(
           src/Soundboard.ui
           src/media-data.cpp
           src/media-data.hpp
-          src/SoundEdit.ui
-          src/volume-control.cpp
-          src/volume-control.hpp)
+          src/SoundEdit.ui)
 
 # Import libobs as main plugin dependency
 find_package(libobs REQUIRED)

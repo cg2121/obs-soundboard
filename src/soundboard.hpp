@@ -10,7 +10,6 @@
 
 class QListWidget;
 class SceneTree;
-class VolControl;
 class MediaControls;
 
 class SoundEdit : public QDialog {
@@ -49,13 +48,8 @@ public:
 	obs_hotkey_pair_id muteHotkeys = OBS_INVALID_HOTKEY_PAIR_ID;
 	obs_hotkey_pair_id playPauseHotkeys = OBS_INVALID_HOTKEY_PAIR_ID;
 
-	bool lockVolume = false;
-	bool usePercent = false;
-
 	void SaveSoundboard(obs_data_t *saveData);
 	void LoadSoundboard(obs_data_t *saveData);
-
-	QPointer<VolControl> vol;
 
 private:
 	void AddSound(const QString &name, const QString &path, bool loop,
@@ -74,16 +68,15 @@ private slots:
 	void SetGrid();
 	void on_soundList_customContextMenuRequested(const QPoint &pos);
 	void DuplicateSound();
-	void SoundboardSetMuted(bool mute);
-	void OpenFilters();
-	void ToggleLockVolume(bool checked);
 
 	void PlaySound();
 	void PauseSound();
 	void RestartSound();
 	void StopSound();
 
+	void OpenFilters();
+
 public slots:
+	void SoundboardSetMuted(bool mute);
 	void PlaySound(const QString &name);
-	void VolControlContextMenu();
 };

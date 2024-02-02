@@ -5,7 +5,6 @@
 #include "util/util.hpp"
 #include "plugin-macros.generated.h"
 #include "soundboard.hpp"
-#include "adv-audio-control.hpp"
 #include <QAction>
 #include <QMainWindow>
 #include <QObject>
@@ -17,7 +16,6 @@
 #include <QListWidget>
 
 #include <scene-tree.hpp>
-#include <volume-control.hpp>
 #include <media-controls.hpp>
 
 #include <media-data.hpp>
@@ -128,12 +126,12 @@ static void OBSEvent(enum obs_frontend_event event, void *data)
 	case OBS_FRONTEND_EVENT_FINISHED_LOADING:
 	case OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED:
 		if (obs_obj_invalid(sb->source)) {
-			source = obs_source_create_private(
+			source = obs_source_create(
 				"ffmpeg_source",
-				QT_TO_UTF8(QTStr("Soundboard")), nullptr);
+				QT_TO_UTF8(QTStr("Soundboard")), nullptr, nullptr);
+			obs_source_set_hidden(source, true);
 
 			sb->ui->mediaControls->SetSource(source);
-			sb->vol->SetSource(source);
 			sb->source = source;
 		}
 
@@ -268,11 +266,6 @@ Soundboard::Soundboard(QWidget *parent) : QWidget(parent), ui(new Ui_Soundboard)
 		"Soundboard.Pause", QT_TO_UTF8(QTStr("PauseHotkey")), play,
 		pause, this, this);
 
-	vol = new VolControl(source, true, true);
-	ui->horizontalLayout->addWidget(vol);
-	QObject::connect(vol->config, SIGNAL(clicked()), this,
-			 SLOT(VolControlContextMenu()));
-
 	obs_frontend_add_event_callback(OBSEvent, this);
 	obs_frontend_add_save_callback(OnSave, this);
 }
@@ -371,9 +364,6 @@ void Soundboard::SaveSoundboard(obs_data_t *saveData)
 			    dock->saveGeometry().toBase64().constData());
 	obs_data_set_int(saveData, "dock_area", window->dockWidgetArea(dock));
 	obs_data_set_bool(saveData, "grid_mode", ui->soundList->GetGridMode());
-	obs_data_set_bool(saveData, "lock_volume", lockVolume);
-
-	obs_data_set_bool(saveData, "props_use_percent", usePercent);
 
 	QListWidgetItem *item = ui->soundList->currentItem();
 
@@ -392,13 +382,13 @@ void Soundboard::LoadSource(obs_data_t *saveData)
 
 	if (sourceData) {
 		obs_data_set_obj(sourceData, "settings", nullptr);
-		source = obs_load_private_source(sourceData);
+		source = obs_load_source(sourceData);
+		obs_source_set_hidden(source, true);
 
 		if (obs_obj_invalid(source))
 			return;
 
 		ui->mediaControls->SetSource(source);
-		vol->SetSource(source);
 	}
 }
 
@@ -453,12 +443,6 @@ void Soundboard::LoadSoundboard(obs_data_t *saveData)
 	bool grid = obs_data_get_bool(saveData, "grid_mode");
 	ui->soundList->SetGridMode(grid);
 
-	bool lock = obs_data_get_bool(saveData, "lock_volume");
-	ToggleLockVolume(lock);
-
-	bool percent = obs_data_get_bool(saveData, "props_use_percent");
-	usePercent = percent;
-
 	QString lastSound =
 		QT_UTF8(obs_data_get_string(saveData, "current_sound"));
 
@@ -481,7 +465,6 @@ void Soundboard::ClearSoundboard()
 {
 	ui->mediaControls->countDownTimer = false;
 	ui->mediaControls->SetSource(nullptr);
-	vol->SetSource(nullptr);
 	source = nullptr;
 
 	ui->soundList->setCurrentItem(nullptr, QItemSelectionModel::Clear);
@@ -618,10 +601,8 @@ static QString GetDefaultString(const QString &name)
 void Soundboard::on_actionAddSound_triggered()
 {
 	SoundEdit edit(this);
-	OBSAdvAudioCtrl advAudio(&edit, source, usePercent);
 	edit.ui->nameEdit->setText(GetDefaultString(QTStr("Sound")));
 	edit.setWindowTitle(QTStr("AddSound"));
-	edit.ui->advAudioLayout->addWidget(&advAudio);
 	edit.adjustSize();
 	edit.exec();
 }
@@ -634,10 +615,8 @@ void Soundboard::on_actionEditSound_triggered()
 		return;
 
 	SoundEdit edit(this);
-	OBSAdvAudioCtrl advAudio(&edit, source, usePercent);
 	edit.setWindowTitle(QTStr("EditSound"));
 	edit.origText = si->text();
-	edit.ui->advAudioLayout->addWidget(&advAudio);
 	edit.editMode = true;
 
 	MediaData *sound = MediaData::FindMediaByName(si->text());
@@ -767,27 +746,6 @@ void Soundboard::SoundboardSetMuted(bool mute)
 void Soundboard::OpenFilters()
 {
 	obs_frontend_open_source_filters(source);
-}
-
-void Soundboard::ToggleLockVolume(bool checked)
-{
-	vol->EnableSlider(!checked);
-	lockVolume = checked;
-}
-
-void Soundboard::VolControlContextMenu()
-{
-	QAction lockAction(MainStr("LockVolume"));
-	lockAction.setCheckable(true);
-	lockAction.setChecked(lockVolume);
-	QObject::connect(&lockAction, SIGNAL(toggled(bool)), this,
-			 SLOT(ToggleLockVolume(bool)));
-
-	QMenu popup(this);
-	popup.addAction(&lockAction);
-	popup.addSeparator();
-	popup.addAction(MainStr("Filters"), this, SLOT(OpenFilters()));
-	popup.exec(QCursor::pos());
 }
 
 OBS_DECLARE_MODULE()
