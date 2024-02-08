@@ -176,107 +176,12 @@ Soundboard::Soundboard(QWidget *parent) : QWidget(parent), ui(new Ui_Soundboard)
 	ui->actionRemoveSound->setToolTip(QTStr("RemoveSound.Title"));
 	ui->actionEditSound->setToolTip(QTStr("EditSound"));
 
-	auto stop = [](void *param, obs_hotkey_id, obs_hotkey_t *,
-		       bool pressed) {
-		Soundboard *sb = static_cast<Soundboard *>(param);
-
-		if (pressed)
-			QMetaObject::invokeMethod(sb, "StopSound");
-	};
-
-	stopHotkey = obs_hotkey_register_frontend(
-		"Soundboard.Stop", QT_TO_UTF8(QTStr("StopHotkey")), stop, this);
-
-	auto restart = [](void *param, obs_hotkey_id, obs_hotkey_t *,
-			  bool pressed) {
-		Soundboard *sb = static_cast<Soundboard *>(param);
-
-		if (pressed)
-			QMetaObject::invokeMethod(sb, "RestartSound");
-	};
-
-	restartHotkey = obs_hotkey_register_frontend(
-		"Soundboard.Restart", QT_TO_UTF8(QTStr("RestartHotkey")),
-		restart, this);
-
-	auto mute = [](void *param, obs_hotkey_pair_id, obs_hotkey_t *,
-		       bool pressed) {
-		Soundboard *sb = static_cast<Soundboard *>(param);
-		bool muted = obs_source_muted(sb->source);
-
-		if (!muted && pressed) {
-			QMetaObject::invokeMethod(sb, "SoundboardSetMuted",
-						  Qt::AutoConnection,
-						  Q_ARG(bool, true));
-
-			return true;
-		}
-
-		return false;
-	};
-
-	auto unmute = [](void *param, obs_hotkey_pair_id, obs_hotkey_t *,
-			 bool pressed) {
-		Soundboard *sb = static_cast<Soundboard *>(param);
-		bool muted = obs_source_muted(sb->source);
-
-		if (muted && pressed) {
-			QMetaObject::invokeMethod(sb, "SoundboardSetMuted",
-						  Qt::AutoConnection,
-						  Q_ARG(bool, false));
-
-			return true;
-		}
-
-		return false;
-	};
-
-	muteHotkeys = obs_hotkey_pair_register_frontend(
-		"Soundboard.Mute", QT_TO_UTF8(QTStr("MuteHotkey")),
-		"Soundboard.Unmute", QT_TO_UTF8(QTStr("UnmuteHotkey")), mute,
-		unmute, this, this);
-
-	auto play = [](void *param, obs_hotkey_pair_id, obs_hotkey_t *,
-		       bool pressed) {
-		Soundboard *sb = static_cast<Soundboard *>(param);
-		bool paused = sb->ui->mediaControls->MediaPaused();
-
-		if (paused && pressed) {
-			QMetaObject::invokeMethod(sb, "PlaySound");
-			return true;
-		}
-
-		return false;
-	};
-
-	auto pause = [](void *param, obs_hotkey_pair_id, obs_hotkey_t *,
-			bool pressed) {
-		Soundboard *sb = static_cast<Soundboard *>(param);
-		bool paused = sb->ui->mediaControls->MediaPaused();
-
-		if (!paused && pressed) {
-			QMetaObject::invokeMethod(sb, "PauseSound");
-			return true;
-		}
-
-		return false;
-	};
-
-	playPauseHotkeys = obs_hotkey_pair_register_frontend(
-		"Soundboard.Play", QT_TO_UTF8(QTStr("PlayHotkey")),
-		"Soundboard.Pause", QT_TO_UTF8(QTStr("PauseHotkey")), play,
-		pause, this, this);
-
 	obs_frontend_add_event_callback(OBSEvent, this);
 	obs_frontend_add_save_callback(OnSave, this);
 }
 
 Soundboard::~Soundboard()
 {
-	obs_hotkey_unregister(stopHotkey);
-	obs_hotkey_unregister(restartHotkey);
-	obs_hotkey_pair_unregister(muteHotkeys);
-	obs_hotkey_pair_unregister(playPauseHotkeys);
 	obs_frontend_remove_event_callback(OBSEvent, this);
 	obs_frontend_remove_save_callback(OnSave, this);
 }
@@ -333,32 +238,6 @@ void Soundboard::SaveSoundboard(obs_data_t *saveData)
 		obs_data_set_obj(saveData, "soundboard_source", sourceData);
 	}
 
-	OBSDataArrayAutoRelease hotkeyArray = obs_hotkey_save(stopHotkey);
-	obs_data_set_array(saveData, "stop_hotkey", hotkeyArray);
-
-	hotkeyArray = obs_hotkey_save(restartHotkey);
-	obs_data_set_array(saveData, "restart_hotkey", hotkeyArray);
-
-	obs_data_array_t *data0 = nullptr;
-	obs_data_array_t *data1 = nullptr;
-
-	obs_hotkey_pair_save(muteHotkeys, &data0, &data1);
-	obs_data_set_array(saveData, "mute_hotkey", data0);
-	obs_data_set_array(saveData, "unmute_hotkey", data1);
-
-	obs_data_array_release(data0);
-	obs_data_array_release(data1);
-
-	obs_data_array_t *data2 = nullptr;
-	obs_data_array_t *data3 = nullptr;
-
-	obs_hotkey_pair_save(playPauseHotkeys, &data2, &data3);
-	obs_data_set_array(saveData, "play_hotkey", data2);
-	obs_data_set_array(saveData, "pause_hotkey", data3);
-
-	obs_data_array_release(data2);
-	obs_data_array_release(data3);
-
 	obs_data_set_bool(saveData, "dock_visible", dock->isVisible());
 	obs_data_set_bool(saveData, "dock_floating", dock->isFloating());
 	obs_data_set_string(saveData, "dock_geometry",
@@ -403,23 +282,6 @@ void Soundboard::LoadSoundboard(obs_data_t *saveData)
 	OBSDataArrayAutoRelease array =
 		obs_data_get_array(saveData, "soundboard_array");
 	LoadSounds(array);
-
-	OBSDataArrayAutoRelease hotkeyArray =
-		obs_data_get_array(saveData, "stop_hotkey");
-	obs_hotkey_load(stopHotkey, hotkeyArray);
-
-	hotkeyArray = obs_data_get_array(saveData, "restart_hotkey");
-	obs_hotkey_load(restartHotkey, hotkeyArray);
-
-	OBSDataArrayAutoRelease data0 =
-		obs_data_get_array(saveData, "mute_hotkey");
-	OBSDataArrayAutoRelease data1 =
-		obs_data_get_array(saveData, "unmute_hotkey");
-	obs_hotkey_pair_load(muteHotkeys, data0, data1);
-
-	data0 = obs_data_get_array(saveData, "play_hotkey");
-	data1 = obs_data_get_array(saveData, "pause_hotkey");
-	obs_hotkey_pair_load(playPauseHotkeys, data0, data1);
 
 	const char *geometry = obs_data_get_string(saveData, "dock_geometry");
 

@@ -43,10 +43,6 @@ public:
 	void ClearSoundboard();
 
 	OBSSourceAutoRelease source;
-	obs_hotkey_id stopHotkey = OBS_INVALID_HOTKEY_ID;
-	obs_hotkey_id restartHotkey = OBS_INVALID_HOTKEY_ID;
-	obs_hotkey_pair_id muteHotkeys = OBS_INVALID_HOTKEY_PAIR_ID;
-	obs_hotkey_pair_id playPauseHotkeys = OBS_INVALID_HOTKEY_PAIR_ID;
 
 	void SaveSoundboard(obs_data_t *saveData);
 	void LoadSoundboard(obs_data_t *saveData);
