@@ -50,6 +50,8 @@ target_sources(
           src/slider-absoluteset-style.hpp
           src/slider-ignorewheel.cpp
           src/slider-ignorewheel.hpp
+          src/sound-edit.cpp
+          src/sound-edit.hpp
           src/soundboard.cpp
           src/soundboard.hpp
           src/Soundboard.ui

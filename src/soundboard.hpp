@@ -6,26 +6,10 @@
 #include <memory>
 
 #include "ui_Soundboard.h"
-#include "ui_SoundEdit.h"
 
 class QListWidget;
 class SceneTree;
 class MediaControls;
-
-class SoundEdit : public QDialog {
-	Q_OBJECT
-
-public:
-	std::unique_ptr<Ui_SoundEdit> ui;
-	SoundEdit(QWidget *parent = nullptr);
-
-	bool editMode = false;
-	QString origText = "";
-
-public slots:
-	void on_browseButton_clicked();
-	void on_buttonBox_clicked(QAbstractButton *button);
-};
 
 class Soundboard : public QWidget {
 	Q_OBJECT
