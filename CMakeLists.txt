@@ -50,11 +50,11 @@ target_sources(
           src/slider-absoluteset-style.hpp
           src/slider-ignorewheel.cpp
           src/slider-ignorewheel.hpp
-          src/sound-edit.cpp
-          src/sound-edit.hpp
+          src/media-edit.cpp
+          src/media-edit.hpp
           src/soundboard.cpp
           src/soundboard.hpp
           src/Soundboard.ui
-          src/SoundEdit.ui)
+          src/MediaEdit.ui)
 
 set_target_properties_plugin(${CMAKE_PROJECT_NAME} PROPERTIES OUTPUT_NAME ${_name})

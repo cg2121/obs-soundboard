@@ -1,31 +1,50 @@
 #pragma once
 
 #include "obs.hpp"
-#include <QString>
+#include <QObject>
 #include <vector>
 
-class MediaData {
+class MediaObj : public QObject {
+	Q_OBJECT
+
 private:
-	static std::vector<MediaData *> mediaItems;
+	static std::vector<MediaObj *> mediaItems;
+
+	QString uuid;
+
 	QString name = "";
 	QString path = "";
-	obs_hotkey_id hotkey = OBS_INVALID_HOTKEY_ID;
 	bool loop = false;
+	float volume = 1.0f;
+
+	obs_hotkey_id hotkey = OBS_INVALID_HOTKEY_ID;
+
+private slots:
+	void PlaySound();
 
 public:
-	MediaData(const QString &name_, const QString &path_, bool loop_);
-	~MediaData();
+	MediaObj(const QString &name, const QString &path);
+	~MediaObj();
 
-	static void SetName(MediaData &media, const QString &newName);
-	static void SetPath(MediaData &media, const QString &newPath);
-	static void SetHotkey(MediaData &media, const obs_hotkey_id &hotkey);
+	static MediaObj *FindByUUID(const QString &uuid);
+	static MediaObj *FindByName(const QString &name);
 
-	static QString GetName(const MediaData &media);
-	static QString GetPath(const MediaData &media);
-	static obs_hotkey_id GetHotkey(const MediaData &media);
-	static MediaData *FindMediaByName(const QString &name);
+	QString GetUUID();
 
-	static void SetLoopingEnabled(MediaData &media, bool loop);
-	static bool LoopingEnabled(const MediaData &media);
-	static std::vector<MediaData *> GetMedia();
+	void SetName(const QString &newName);
+	QString GetName();
+
+	void SetPath(const QString &newPath);
+	QString GetPath();
+
+	obs_hotkey_id GetHotkey();
+
+	void SetLoopEnabled(bool enable);
+	bool LoopEnabled();
+
+	void SetVolume(float volume);
+	float GetVolume();
+
+signals:
+	void Play(MediaObj *obj);
 };

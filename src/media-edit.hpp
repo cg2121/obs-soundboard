@@ -27,6 +27,6 @@ public:
 	void SetPath(const QString &path);
 	QString GetPath();
 
-	void SetLoopChecked(bool check);
+	void SetLoopChecked(bool checked);
 	bool LoopChecked();
 };

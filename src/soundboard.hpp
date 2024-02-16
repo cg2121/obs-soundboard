@@ -5,58 +5,54 @@
 #include <QPointer>
 #include <memory>
 
-#include "ui_Soundboard.h"
-
-class QListWidget;
 class SceneTree;
 class MediaControls;
+class MediaObj;
+class QListWidgetItem;
+class Ui_Soundboard;
 
 class Soundboard : public QWidget {
 	Q_OBJECT
 
-	friend class SoundEdit;
-
-public:
+private:
+	QString prevPath;
 	std::unique_ptr<Ui_Soundboard> ui;
-	Soundboard(QWidget *parent = nullptr);
-	~Soundboard();
 
-	obs_data_array_t *SaveSounds();
-	void LoadSounds(obs_data_array_t *array);
-	void LoadSource(obs_data_t *saveData);
-	void ClearSoundboard();
+	MediaObj *GetCurrentMediaObj();
+	QListWidgetItem *FindItem(MediaObj *obj);
 
 	OBSSourceAutoRelease source;
 
-	void SaveSoundboard(obs_data_t *saveData);
-	void LoadSoundboard(obs_data_t *saveData);
-
-private:
-	void AddSound(const QString &name, const QString &path, bool loop,
-		      obs_data_t *settings = nullptr);
-	void EditSound(const QString &newName, const QString &newPath,
-		       bool loop);
-
-	QString prevName = "";
-	QString prevSound = "";
+	bool actionsEnabled = false;
 
 private slots:
-	void on_soundList_itemClicked(QListWidgetItem *item);
-	void on_actionAddSound_triggered();
-	void on_actionRemoveSound_triggered();
-	void on_actionEditSound_triggered();
-	void SetGrid();
-	void on_soundList_customContextMenuRequested(const QPoint &pos);
-	void DuplicateSound();
+	void on_list_itemClicked();
+	void on_actionAdd_triggered();
+	void on_actionRemove_triggered();
+	void on_actionEdit_triggered();
+	void UpdateActions();
+	void on_list_customContextMenuRequested(const QPoint &pos);
+	void on_actionDuplicate_triggered();
 
-	void PlaySound();
-	void PauseSound();
-	void RestartSound();
-	void StopSound();
+	void on_actionFilters_triggered();
 
-	void OpenFilters();
+	void on_actionListMode_triggered();
+	void on_actionGridMode_triggered();
 
-public slots:
-	void SoundboardSetMuted(bool mute);
-	void PlaySound(const QString &name);
+	MediaObj *Add(const QString &name, const QString &path);
+	void Play(MediaObj *obj);
+
+public:
+	Soundboard(QWidget *parent = nullptr);
+	~Soundboard();
+
+	OBSDataArray SaveMedia();
+	void LoadMedia(OBSDataArray array);
+	void LoadSource(OBSData saveData);
+	void Clear();
+
+	void Save(OBSData saveData);
+	void Load(OBSData saveData);
+
+	void CreateSource();
 };
