@@ -1,31 +1,41 @@
 #pragma once
 
 #include "obs.hpp"
-#include <QString>
-#include <vector>
+#include <string>
+#include <unordered_map>
 
-class MediaData {
+class MediaObj {
 private:
-	static std::vector<MediaData *> mediaItems;
-	QString name = "";
-	QString path = "";
-	obs_hotkey_id hotkey = OBS_INVALID_HOTKEY_ID;
+	static std::unordered_map<std::string, MediaObj *> uuidMap;
+	static std::unordered_map<std::string, MediaObj *> nameMap;
+
+	std::string uuid;
+
+	std::string name = "";
+	std::string path = "";
 	bool loop = false;
+	float volume = 1.0f;
+
+	obs_hotkey_id hotkey = OBS_INVALID_HOTKEY_ID;
 
 public:
-	MediaData(const QString &name_, const QString &path_, bool loop_);
-	~MediaData();
+	MediaObj(const std::string &name, const std::string &path);
+	~MediaObj();
 
-	static void SetName(MediaData &media, const QString &newName);
-	static void SetPath(MediaData &media, const QString &newPath);
-	static void SetHotkey(MediaData &media, const obs_hotkey_id &hotkey);
+	static MediaObj *FindByUUID(const std::string &uuid);
+	static MediaObj *FindByName(const std::string &name);
 
-	static QString GetName(const MediaData &media);
-	static QString GetPath(const MediaData &media);
-	static obs_hotkey_id GetHotkey(const MediaData &media);
-	static MediaData *FindMediaByName(const QString &name);
+	std::string GetUUID();
 
-	static void SetLoopingEnabled(MediaData &media, bool loop);
-	static bool LoopingEnabled(const MediaData &media);
-	static std::vector<MediaData *> GetMedia();
+	void SetName(const std::string &newName);
+	std::string GetName();
+
+	void SetPath(const std::string &newPath);
+	std::string GetPath();
+
+	void SetLoopEnabled(bool enable);
+	bool LoopEnabled();
+
+	void SetVolume(float volume);
+	float GetVolume();
 };

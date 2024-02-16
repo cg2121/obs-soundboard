@@ -36,7 +36,7 @@
             "bundleId": "com.obs-plugin.obs-soundboard"
         }
     },
-    "name": "obs-plugintemplate",
+    "name": "obs-soundboard",
     "displayName": "OBS Soundboard",
     "version": "1.1.1",
     "author": "cg2121",

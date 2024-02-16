@@ -37,7 +37,10 @@
      <property name="frameShadow">
       <enum>QFrame::Sunken</enum>
      </property>
-     <layout class="QGridLayout" name="gridLayout_2">
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <property name="spacing">
+       <number>2</number>
+      </property>
       <property name="leftMargin">
        <number>0</number>
       </property>
@@ -48,63 +51,49 @@
        <number>0</number>
       </property>
       <property name="bottomMargin">
-       <number>0</number>
+       <number>4</number>
       </property>
-      <property name="spacing">
-       <number>0</number>
-      </property>
-      <item row="0" column="0">
-       <layout class="QVBoxLayout" name="mainLayout">
-        <property name="spacing">
-         <number>0</number>
+      <item>
+       <widget class="SceneTree" name="list">
+        <property name="contextMenuPolicy">
+         <enum>Qt::CustomContextMenu</enum>
         </property>
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout">
-          <item>
-           <widget class="SceneTree" name="soundList">
-            <property name="contextMenuPolicy">
-             <enum>Qt::CustomContextMenu</enum>
-            </property>
-            <property name="horizontalScrollBarPolicy">
-             <enum>Qt::ScrollBarAlwaysOff</enum>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item>
-         <widget class="MediaControls" name="mediaControls" native="true"/>
-        </item>
-        <item>
-         <widget class="QToolBar" name="soundboardToolbar">
-          <property name="styleSheet">
-           <string notr="true">QToolBar { background: transparent; }</string>
-          </property>
-          <property name="movable">
-           <bool>false</bool>
-          </property>
-          <property name="iconSize">
-           <size>
-            <width>16</width>
-            <height>16</height>
-           </size>
-          </property>
-          <property name="floatable">
-           <bool>false</bool>
-          </property>
-          <addaction name="actionAddSound"/>
-          <addaction name="actionRemoveSound"/>
-          <addaction name="separator"/>
-          <addaction name="actionEditSound"/>
-         </widget>
-        </item>
-       </layout>
+        <property name="horizontalScrollBarPolicy">
+         <enum>Qt::ScrollBarAlwaysOff</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolBar" name="toolbar">
+        <property name="styleSheet">
+         <string notr="true">QToolBar { background: transparent; }</string>
+        </property>
+        <property name="movable">
+         <bool>false</bool>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>16</width>
+          <height>16</height>
+         </size>
+        </property>
+        <property name="floatable">
+         <bool>false</bool>
+        </property>
+        <addaction name="actionAdd"/>
+        <addaction name="actionRemove"/>
+        <addaction name="separator"/>
+        <addaction name="actionEdit"/>
+       </widget>
+      </item>
+      <item>
+       <widget class="MediaControls" name="mediaControls" native="true"/>
       </item>
      </layout>
     </widget>
    </item>
   </layout>
-  <action name="actionAddSound">
+  <action name="actionAdd">
    <property name="icon">
     <iconset>
      <normaloff>:/res/images/plus.svg</normaloff>:/res/images/plus.svg</iconset>
@@ -112,11 +101,17 @@
    <property name="text">
     <string>Add</string>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
    <property name="themeID" stdset="0">
     <string notr="true">addIconSmall</string>
    </property>
   </action>
-  <action name="actionRemoveSound">
+  <action name="actionRemove">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset>
      <normaloff>:/res/images/minus.svg</normaloff>:/res/images/minus.svg</iconset>
@@ -124,11 +119,17 @@
    <property name="text">
     <string>Remove</string>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
    <property name="themeID" stdset="0">
     <string notr="true">removeIconSmall</string>
    </property>
   </action>
-  <action name="actionEditSound">
+  <action name="actionEdit">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset>
      <normaloff>:/settings/images/settings/general.svg</normaloff>:/settings/images/settings/general.svg</iconset>
@@ -136,8 +137,34 @@
    <property name="text">
     <string>Edit</string>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
    <property name="themeID" stdset="0">
     <string notr="true">configIconSmall</string>
+   </property>
+  </action>
+  <action name="actionDuplicate">
+   <property name="text">
+    <string>Duplicate</string>
+   </property>
+  </action>
+  <action name="actionFilters">
+   <property name="text">
+    <string>Filters</string>
+   </property>
+  </action>
+  <action name="actionListMode">
+   <property name="text">
+    <string>ListMode</string>
+   </property>
+  </action>
+  <action name="actionGridMode">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>GridMode</string>
    </property>
   </action>
  </widget>

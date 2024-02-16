@@ -1,74 +1,110 @@
 #include "media-data.hpp"
+#include <util/platform.h>
+#include <util/util.hpp>
 
-std::vector<MediaData *> MediaData::mediaItems;
+std::unordered_map<std::string, MediaObj *> MediaObj::uuidMap;
+std::unordered_map<std::string, MediaObj *> MediaObj::nameMap;
 
-MediaData::MediaData(const QString &name_, const QString &path_, bool loop_)
+MediaObj::MediaObj(const std::string &name_, const std::string &path_)
 	: name(name_),
-	  path(path_),
-	  loop(loop_)
+	path(path_)
 {
-	mediaItems.emplace_back(this);
+	BPtr<char> uuid_ = os_generate_uuid();
+	uuid = uuid_.Get();
+	uuidMap.insert({ uuid, this });
+
+//	std::string hotkeyName = QTStr("SoundHotkey").arg(name);
+
+//	auto playSound = [](void *data, obs_hotkey_id, obs_hotkey_t *,
+//			    bool pressed)
+//	{
+//		MediaObj *sound = static_cast<MediaObj *>(data);
+
+//		if (pressed)
+//			QMetaObject::invokeMethod(sound, "PlaySound");
+//	};
+
+//	hotkey = obs_hotkey_register_frontend(QT_TO_UTF8(hotkeyName), QT_TO_UTF8(hotkeyName), playSound, this);
+
+	nameMap.insert({ name, this });
 }
 
-MediaData::~MediaData()
+MediaObj::~MediaObj()
 {
 	obs_hotkey_unregister(hotkey);
-	mediaItems.erase(std::remove(mediaItems.begin(), mediaItems.end(),
-				     this),
-			 mediaItems.end());
+	nameMap.erase(name);
+	uuidMap.erase(uuid);
 }
 
-QString MediaData::GetName(const MediaData &media)
+MediaObj *MediaObj::FindByName(const std::string &name)
 {
-	return media.name;
+	auto it = nameMap.find(name);
+	return it != nameMap.end() ? it->second : nullptr;
 }
 
-QString MediaData::GetPath(const MediaData &media)
+MediaObj *MediaObj::FindByUUID(const std::string &uuid)
 {
-	return media.path;
+	auto it = uuidMap.find(uuid);
+	return it != uuidMap.end() ? it->second : nullptr;
 }
 
-obs_hotkey_id MediaData::GetHotkey(const MediaData &media)
+std::string MediaObj::GetUUID()
 {
-	return media.hotkey;
+	return uuid;
 }
 
-void MediaData::SetName(MediaData &media, const QString &newName)
+void MediaObj::SetName(const std::string &newName)
 {
-	media.name = newName;
+	if (name.empty() || name == newName)
+		return;
+
+	nameMap.erase(name);
+
+	name = newName;
+
+//	std::string hotkeyName = QTStr("SoundHotkey").arg(name);
+//	obs_hotkey_set_name(hotkey, QT_TO_UTF8(hotkeyName));
+//	obs_hotkey_set_description(hotkey, QT_TO_UTF8(hotkeyName));
+
+	nameMap.insert({ name, this });
 }
 
-void MediaData::SetPath(MediaData &media, const QString &newPath)
+std::string MediaObj::GetName()
 {
-	media.path = newPath;
+	return name;
 }
 
-void MediaData::SetHotkey(MediaData &media, const obs_hotkey_id &hotkey)
+void MediaObj::SetPath(const std::string &newPath)
 {
-	media.hotkey = hotkey;
+	path = newPath;
 }
 
-MediaData *MediaData::FindMediaByName(const QString &name)
+std::string MediaObj::GetPath()
 {
-	for (auto &media : mediaItems) {
-		if (media->name == name)
-			return media;
-	}
-
-	return nullptr;
+	return path;
 }
 
-void MediaData::SetLoopingEnabled(MediaData &media, bool loop)
+void MediaObj::SetLoopEnabled(bool enable)
 {
-	media.loop = loop;
+	loop = enable;
 }
 
-bool MediaData::LoopingEnabled(const MediaData &media)
+bool MediaObj::LoopEnabled()
 {
-	return media.loop;
+	return loop;
 }
 
-std::vector<MediaData *> MediaData::GetMedia()
+void MediaObj::SetVolume(float newVolume)
 {
-	return mediaItems;
+	volume = newVolume;
 }
+
+float MediaObj::GetVolume()
+{
+	return volume;
+}
+
+//void MediaObj::PlaySound()
+//{
+//	emit Play(this);
+//}
