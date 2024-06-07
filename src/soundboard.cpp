@@ -14,6 +14,7 @@
 #include <QMenu>
 #include <QListWidget>
 #include <QActionGroup>
+#include <QLineEdit>
 
 #include "scene-tree.hpp"
 #include "media-controls.hpp"
@@ -96,6 +97,24 @@ Soundboard::Soundboard(QWidget *parent) : QWidget(parent), ui(new Ui_Soundboard)
 
 	obs_frontend_add_event_callback(OnEvent, this);
 	obs_frontend_add_save_callback(OnSave, this);
+
+	ui->list->setItemDelegate(new MediaRenameDelegate(ui->list));
+
+	renameMedia = new QAction(MainStr("Rename"), this);
+	renameMedia->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+	connect(renameMedia, &QAction::triggered, this,
+		&Soundboard::EditMediaName);
+
+#ifdef __APPLE__
+	renameMedia->setShortcut({Qt::Key_Return});
+#else
+	renameMedia->setShortcut({Qt::Key_F2});
+#endif
+
+	addAction(renameMedia);
+
+	connect(ui->list->itemDelegate(), &QAbstractItemDelegate::closeEditor,
+		this, &Soundboard::MediaNameEdited);
 }
 
 Soundboard::~Soundboard()
@@ -501,6 +520,8 @@ void Soundboard::on_list_customContextMenuRequested(const QPoint &pos)
 	popup.addSeparator();
 
 	if (item) {
+		popup.addAction(renameMedia);
+		popup.addSeparator();
 		popup.addAction(ui->actionEdit);
 		popup.addAction(ui->actionRemove);
 		popup.addAction(ui->actionDuplicate);
@@ -521,6 +542,87 @@ void Soundboard::on_list_customContextMenuRequested(const QPoint &pos)
 void Soundboard::on_actionFilters_triggered()
 {
 	obs_frontend_open_source_filters(source);
+}
+
+void Soundboard::EditMediaName()
+{
+	removeAction(renameMedia);
+	QListWidgetItem *item = ui->list->currentItem();
+	Qt::ItemFlags flags = item->flags();
+
+	item->setFlags(flags | Qt::ItemIsEditable);
+	ui->list->editItem(item);
+	item->setFlags(flags);
+}
+
+void Soundboard::MediaNameEdited(QWidget *editor)
+{
+	addAction(renameMedia);
+	MediaObj *obj = GetCurrentMediaObj();
+	QLineEdit *edit = qobject_cast<QLineEdit *>(editor);
+	QString name = edit->text().trimmed();
+
+	if (!obj)
+		return;
+
+	QListWidgetItem *item = FindItem(obj);
+	QString origName = obj->GetName();
+
+	if (name == origName) {
+		item->setText(origName);
+		return;
+	}
+
+	if (name.isEmpty()) {
+		item->setText(origName);
+		QMessageBox::warning(this, MainStr("EmptyName.Title"),
+				     MainStr("EmptyName.Text"));
+		return;
+	}
+
+	if (MediaObj::FindByName(name)) {
+		item->setText(origName);
+		QMessageBox::warning(this, MainStr("NameExists.Title"),
+				     MainStr("NameExists.Text"));
+		return;
+	}
+
+	obj->SetName(name);
+	item->setText(name);
+}
+
+MediaRenameDelegate::MediaRenameDelegate(QObject *parent)
+	: QStyledItemDelegate(parent)
+{
+}
+
+void MediaRenameDelegate::setEditorData(QWidget *editor,
+					const QModelIndex &index) const
+{
+	QStyledItemDelegate::setEditorData(editor, index);
+	QLineEdit *lineEdit = qobject_cast<QLineEdit *>(editor);
+	if (lineEdit)
+		lineEdit->selectAll();
+}
+
+bool MediaRenameDelegate::eventFilter(QObject *editor, QEvent *event)
+{
+	if (event->type() == QEvent::KeyPress) {
+		QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+		switch (keyEvent->key()) {
+		case Qt::Key_Escape: {
+			QLineEdit *lineEdit = qobject_cast<QLineEdit *>(editor);
+			if (lineEdit)
+				lineEdit->undo();
+			break;
+		}
+		case Qt::Key_Tab:
+		case Qt::Key_Backtab:
+			return false;
+		}
+	}
+
+	return QStyledItemDelegate::eventFilter(editor, event);
 }
 
 OBS_DECLARE_MODULE()

@@ -2,6 +2,7 @@
 
 #include "obs.hpp"
 #include <QWidget>
+#include <QStyledItemDelegate>
 #include <QPointer>
 #include <memory>
 
@@ -25,6 +26,8 @@ private:
 
 	bool actionsEnabled = false;
 
+	QAction *renameMedia = nullptr;
+
 private slots:
 	void on_list_itemClicked();
 	void on_actionAdd_triggered();
@@ -42,6 +45,9 @@ private slots:
 	MediaObj *Add(const QString &name, const QString &path);
 	void Play(MediaObj *obj);
 
+	void EditMediaName();
+	void MediaNameEdited(QWidget *editor);
+
 public:
 	Soundboard(QWidget *parent = nullptr);
 	~Soundboard();
@@ -55,4 +61,16 @@ public:
 	void Load(OBSData saveData);
 
 	void CreateSource();
+};
+
+class MediaRenameDelegate : public QStyledItemDelegate {
+	Q_OBJECT
+
+public:
+	MediaRenameDelegate(QObject *parent);
+	virtual void setEditorData(QWidget *editor,
+				   const QModelIndex &index) const override;
+
+protected:
+	virtual bool eventFilter(QObject *editor, QEvent *event) override;
 };
