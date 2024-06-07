@@ -15,6 +15,8 @@
 #include <QListWidget>
 #include <QActionGroup>
 #include <QLineEdit>
+#include <QMimeData>
+#include <QFileInfo>
 
 #include "scene-tree.hpp"
 #include "media-controls.hpp"
@@ -542,6 +544,31 @@ void Soundboard::on_list_customContextMenuRequested(const QPoint &pos)
 void Soundboard::on_actionFilters_triggered()
 {
 	obs_frontend_open_source_filters(source);
+}
+
+void Soundboard::dragEnterEvent(QDragEnterEvent *event)
+{
+	if (event->mimeData()->hasUrls())
+		event->acceptProposedAction();
+}
+
+void Soundboard::dropEvent(QDropEvent *event)
+{
+	QStringList supportedExt;
+	supportedExt << ".mp3" << ".aac" << ".ogg" << ".wav" << ".flac";
+
+	foreach(const QUrl &url, event->mimeData()->urls())
+	{
+		QString path = url.toLocalFile();
+		QFileInfo fi(path);
+		QString name = fi.fileName();
+		QString ext = QString(".") + fi.completeSuffix();
+
+		if (!supportedExt.contains(ext))
+			continue;
+
+		Add(name, path);
+	}
 }
 
 void Soundboard::EditMediaName()

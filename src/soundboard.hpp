@@ -61,6 +61,10 @@ public:
 	void Load(OBSData saveData);
 
 	void CreateSource();
+
+protected:
+	virtual void dragEnterEvent(QDragEnterEvent *event) override;
+	virtual void dropEvent(QDropEvent *event) override;
 };
 
 class MediaRenameDelegate : public QStyledItemDelegate {
