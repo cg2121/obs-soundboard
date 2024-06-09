@@ -47,4 +47,5 @@ public:
 
 signals:
 	void Play(MediaObj *obj);
+	void Renamed(MediaObj *obj, QString newName);
 };

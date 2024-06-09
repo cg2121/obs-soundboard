@@ -361,6 +361,14 @@ void Soundboard::Play(MediaObj *obj)
 	ui->list->setCurrentItem(item);
 }
 
+void Soundboard::ItemRenamed(MediaObj *obj, QString name)
+{
+	QListWidgetItem *item = FindItem(obj);
+
+	if (item)
+		item->setText(name);
+}
+
 MediaObj *Soundboard::Add(const QString &name_, const QString &path)
 {
 	QString name = GetDefaultString(name_);
@@ -373,6 +381,7 @@ MediaObj *Soundboard::Add(const QString &name_, const QString &path)
 	ui->list->setCurrentItem(item);
 
 	connect(obj, &MediaObj::Play, this, &Soundboard::Play);
+	connect(obj, &MediaObj::Renamed, this, &Soundboard::ItemRenamed);
 
 	UpdateActions();
 
@@ -417,7 +426,6 @@ void Soundboard::on_actionEdit_triggered()
 		obj->SetName(name);
 		obj->SetPath(path);
 		obj->SetLoopEnabled(loop);
-		item->setText(edit.GetName());
 	};
 
 	connect(&edit, &QDialog::accepted, this, edited);
@@ -615,7 +623,6 @@ void Soundboard::MediaNameEdited(QWidget *editor)
 	}
 
 	obj->SetName(name);
-	item->setText(name);
 }
 
 MediaRenameDelegate::MediaRenameDelegate(QObject *parent)

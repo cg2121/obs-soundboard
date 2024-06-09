@@ -68,7 +68,7 @@ QString MediaObj::GetUUID()
 
 void MediaObj::SetName(const QString &newName)
 {
-	if (name.isEmpty())
+	if (newName.isEmpty() || name == newName)
 		return;
 
 	name = newName;
@@ -76,6 +76,8 @@ void MediaObj::SetName(const QString &newName)
 	QString hotkeyName = QTStr("SoundHotkey").arg(name);
 	obs_hotkey_set_name(hotkey, QT_TO_UTF8(hotkeyName));
 	obs_hotkey_set_description(hotkey, QT_TO_UTF8(hotkeyName));
+
+	emit Renamed(this, name);
 }
 
 QString MediaObj::GetName()
