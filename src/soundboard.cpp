@@ -380,7 +380,7 @@ MediaObj *Soundboard::Add(const QString &name_, const QString &path)
 	ui->list->addItem(item);
 	ui->list->setCurrentItem(item);
 
-	connect(obj, &MediaObj::Play, this, &Soundboard::Play);
+	connect(obj, &MediaObj::HotkeyPressed, this, &Soundboard::Play);
 	connect(obj, &MediaObj::Renamed, this, &Soundboard::ItemRenamed);
 
 	UpdateActions();

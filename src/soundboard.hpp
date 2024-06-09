@@ -44,6 +44,7 @@ private slots:
 
 	MediaObj *Add(const QString &name, const QString &path);
 	void Play(MediaObj *obj);
+	void Stop(MediaObj *obj);
 
 	void EditMediaName();
 	void MediaNameEdited(QWidget *editor);

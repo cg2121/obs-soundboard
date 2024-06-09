@@ -23,7 +23,9 @@ MediaObj::MediaObj(const QString &name_, const QString &path_)
 		MediaObj *sound = static_cast<MediaObj *>(data);
 
 		if (pressed)
-			QMetaObject::invokeMethod(sound, "PlaySound");
+			QMetaObject::invokeMethod(sound, "Pressed");
+		else
+			QMetaObject::invokeMethod(sound, "Released");
 	};
 
 	hotkey = obs_hotkey_register_frontend(QT_TO_UTF8(hotkeyName),
@@ -120,7 +122,12 @@ float MediaObj::GetVolume()
 	return volume;
 }
 
-void MediaObj::PlaySound()
+void MediaObj::Pressed()
 {
-	emit Play(this);
+	emit HotkeyPressed(this);
+}
+
+void MediaObj::Released()
+{
+	emit HotkeyReleased(this);
 }

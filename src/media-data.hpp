@@ -20,7 +20,8 @@ private:
 	obs_hotkey_id hotkey = OBS_INVALID_HOTKEY_ID;
 
 private slots:
-	void PlaySound();
+	void Pressed();
+	void Released();
 
 public:
 	MediaObj(const QString &name, const QString &path);
@@ -46,6 +47,8 @@ public:
 	float GetVolume();
 
 signals:
-	void Play(MediaObj *obj);
+	void HotkeyPressed(MediaObj *obj);
+	void HotkeyReleased(MediaObj *obj);
+
 	void Renamed(MediaObj *obj, QString newName);
 };
