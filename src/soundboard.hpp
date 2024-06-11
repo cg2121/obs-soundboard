@@ -49,7 +49,7 @@ private slots:
 	void EditMediaName();
 	void MediaNameEdited(QWidget *editor);
 
-	void ItemRenamed(MediaObj *obj, QString name);
+	void ItemRenamed(MediaObj *obj);
 
 public:
 	Soundboard(QWidget *parent = nullptr);

@@ -79,7 +79,7 @@ void MediaObj::SetName(const QString &newName)
 	obs_hotkey_set_name(hotkey, QT_TO_UTF8(hotkeyName));
 	obs_hotkey_set_description(hotkey, QT_TO_UTF8(hotkeyName));
 
-	emit Renamed(this, name);
+	emit Renamed(this);
 }
 
 QString MediaObj::GetName()

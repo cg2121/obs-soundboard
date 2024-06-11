@@ -50,5 +50,5 @@ signals:
 	void HotkeyPressed(MediaObj *obj);
 	void HotkeyReleased(MediaObj *obj);
 
-	void Renamed(MediaObj *obj, QString newName);
+	void Renamed(MediaObj *obj);
 };

@@ -361,12 +361,12 @@ void Soundboard::Play(MediaObj *obj)
 	ui->list->setCurrentItem(item);
 }
 
-void Soundboard::ItemRenamed(MediaObj *obj, QString name)
+void Soundboard::ItemRenamed(MediaObj *obj)
 {
 	QListWidgetItem *item = FindItem(obj);
 
 	if (item)
-		item->setText(name);
+		item->setText(obj->GetName());
 }
 
 MediaObj *Soundboard::Add(const QString &name_, const QString &path)
