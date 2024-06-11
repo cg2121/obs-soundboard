@@ -414,8 +414,6 @@ void Soundboard::on_actionEdit_triggered()
 	if (!obj)
 		return;
 
-	QListWidgetItem *item = FindItem(obj);
-
 	MediaEdit edit(this);
 
 	auto edited = [&]() {
