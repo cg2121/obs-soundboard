@@ -556,8 +556,24 @@ void Soundboard::on_actionFilters_triggered()
 
 void Soundboard::dragEnterEvent(QDragEnterEvent *event)
 {
+	// refuse drops of our own widgets
+	if (event->source() != nullptr) {
+		event->setDropAction(Qt::IgnoreAction);
+		return;
+	}
+
 	if (event->mimeData()->hasUrls())
 		event->acceptProposedAction();
+}
+
+void Soundboard::dragLeaveEvent(QDragLeaveEvent *event)
+{
+	event->accept();
+}
+
+void Soundboard::dragMoveEvent(QDragMoveEvent *event)
+{
+	event->acceptProposedAction();
 }
 
 void Soundboard::dropEvent(QDropEvent *event)
