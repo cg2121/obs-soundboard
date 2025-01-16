@@ -351,7 +351,6 @@ void Soundboard::Play(MediaObj *obj)
 	prevPath = path;
 
 	QListWidgetItem *item = FindItem(obj);
-	obs_source_set_volume(source, obj->GetVolume());
 
 	OBSDataAutoRelease settings = obs_data_create();
 	obs_data_set_bool(settings, "looping", obj->LoopEnabled());
