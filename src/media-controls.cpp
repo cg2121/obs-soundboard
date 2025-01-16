@@ -430,7 +430,7 @@ void MediaControls::MoveSliderFoward(int seconds)
 	if (!source)
 		return;
 
-	int ms = obs_source_media_get_time(source);
+	int64_t ms = obs_source_media_get_time(source);
 	ms += seconds * 1000;
 
 	obs_source_media_set_time(source, ms);
@@ -444,7 +444,7 @@ void MediaControls::MoveSliderBackwards(int seconds)
 	if (!source)
 		return;
 
-	int ms = obs_source_media_get_time(source);
+	int64_t ms = obs_source_media_get_time(source);
 	ms -= seconds * 1000;
 
 	obs_source_media_set_time(source, ms);

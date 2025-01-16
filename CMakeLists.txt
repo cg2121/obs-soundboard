@@ -57,7 +57,6 @@ target_sources(
           src/slider-ignorewheel.hpp
           src/soundboard.cpp
           src/soundboard.hpp
-          src/Soundboard.ui
-          src/sound-edit.hpp)
+          src/Soundboard.ui)
 
 set_target_properties_plugin(${CMAKE_PROJECT_NAME} PROPERTIES OUTPUT_NAME ${_name})
