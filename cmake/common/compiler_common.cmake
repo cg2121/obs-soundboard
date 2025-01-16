@@ -82,4 +82,6 @@ set(_obs_clang_cxx_options
     -Wno-overloaded-virtual
     -Wrange-loop-analysis)
 
-set(CMAKE_COMPILE_WARNING_AS_ERROR OFF)
+if(NOT DEFINED CMAKE_COMPILE_WARNING_AS_ERROR)
+  set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
+endif()

@@ -1,6 +1,6 @@
 /*
-OBS Soundboard
-Copyright (C) 2023 cg2121 claytong1214@gmail.com
+Plugin Name
+Copyright (C) 2025 cg2121 claytong1214@gmail.com
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

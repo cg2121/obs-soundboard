@@ -22,8 +22,8 @@ if(ENABLE_FRONTEND_API)
 endif()
 
 if(ENABLE_QT)
-  find_qt(COMPONENTS Widgets Core)
-  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Qt::Core Qt::Widgets)
+  find_package(Qt6 COMPONENTS Widgets Core)
+  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Qt6::Core Qt6::Widgets)
   target_compile_options(
     ${CMAKE_PROJECT_NAME} PRIVATE $<$<C_COMPILER_ID:Clang,AppleClang>:-Wno-quoted-include-in-framework-header
                                   -Wno-comma>)
@@ -42,19 +42,22 @@ target_sources(
           src/media-controls.ui
           src/media-data.cpp
           src/media-data.hpp
+          src/media-edit.cpp
+          src/media-edit.hpp
+          src/MediaEdit.ui
           src/media-slider.cpp
           src/media-slider.hpp
+          src/plugin-support.c.in
+          src/plugin-support.h
           src/scene-tree.cpp
           src/scene-tree.hpp
           src/slider-absoluteset-style.cpp
           src/slider-absoluteset-style.hpp
           src/slider-ignorewheel.cpp
           src/slider-ignorewheel.hpp
-          src/media-edit.cpp
-          src/media-edit.hpp
           src/soundboard.cpp
           src/soundboard.hpp
           src/Soundboard.ui
-          src/MediaEdit.ui)
+          src/sound-edit.hpp)
 
 set_target_properties_plugin(${CMAKE_PROJECT_NAME} PROPERTIES OUTPUT_NAME ${_name})
