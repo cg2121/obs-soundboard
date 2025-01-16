@@ -578,14 +578,14 @@ void Soundboard::dragMoveEvent(QDragMoveEvent *event)
 void Soundboard::dropEvent(QDropEvent *event)
 {
 	QStringList supportedExt;
-	supportedExt << ".mp3" << ".aac" << ".ogg" << ".wav" << ".flac";
+	supportedExt << "mp3" << "aac" << "ogg" << "wav" << "flac";
 
 	foreach(const QUrl &url, event->mimeData()->urls())
 	{
 		QString path = url.toLocalFile();
 		QFileInfo fi(path);
 		QString name = fi.fileName();
-		QString ext = QString(".") + fi.completeSuffix();
+		QString ext = fi.suffix();
 
 		if (!supportedExt.contains(ext))
 			continue;
