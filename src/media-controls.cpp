@@ -187,7 +187,7 @@ void MediaControls::StartMediaTimer()
 		return;
 
 	if (!mediaTimer.isActive())
-		mediaTimer.start(1000);
+		mediaTimer.start(16);
 }
 
 void MediaControls::StopMediaTimer()
