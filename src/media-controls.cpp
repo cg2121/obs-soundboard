@@ -47,10 +47,10 @@ void MediaControls::OBSMediaPrevious(void *data, calldata_t *)
 MediaControls::MediaControls(QWidget *parent) : QWidget(parent), ui(new Ui::MediaControls)
 {
 	ui->setupUi(this);
-	ui->playPauseButton->setProperty("class", "icon-media-play");
-	ui->previousButton->setProperty("class", "icon-media-prev");
-	ui->nextButton->setProperty("class", "icon-media-next");
-	ui->stopButton->setProperty("class", "icon-media-stop");
+	ui->playPauseButton->setProperty("class", "icon-media-play btn-tool");
+	ui->previousButton->setProperty("class", "icon-media-prev btn-tool");
+	ui->nextButton->setProperty("class", "icon-media-next btn-tool");
+	ui->stopButton->setProperty("class", "icon-media-stop btn-tool");
 	setFocusPolicy(Qt::StrongFocus);
 
 	connect(&mediaTimer, &QTimer::timeout, this, &MediaControls::SetSliderPosition);
@@ -199,7 +199,7 @@ void MediaControls::StopMediaTimer()
 void MediaControls::SetPlayingState()
 {
 	ui->slider->setEnabled(true);
-	ui->playPauseButton->setProperty("class", "icon-media-pause");
+	ui->playPauseButton->setProperty("class", "icon-media-pause btn-tool");
 	ui->playPauseButton->style()->unpolish(ui->playPauseButton);
 	ui->playPauseButton->style()->polish(ui->playPauseButton);
 	ui->playPauseButton->setToolTip(QTStr("ContextBar.MediaControls.PauseMedia"));
@@ -212,7 +212,7 @@ void MediaControls::SetPlayingState()
 
 void MediaControls::SetPausedState()
 {
-	ui->playPauseButton->setProperty("class", "icon-media-play");
+	ui->playPauseButton->setProperty("class", "icon-media-play btn-tool");
 	ui->playPauseButton->style()->unpolish(ui->playPauseButton);
 	ui->playPauseButton->style()->polish(ui->playPauseButton);
 	ui->playPauseButton->setToolTip(QTStr("ContextBar.MediaControls.PlayMedia"));
@@ -222,7 +222,7 @@ void MediaControls::SetPausedState()
 
 void MediaControls::SetRestartState()
 {
-	ui->playPauseButton->setProperty("class", "icon-media-restart");
+	ui->playPauseButton->setProperty("class", "icon-media-restart btn-tool");
 	ui->playPauseButton->style()->unpolish(ui->playPauseButton);
 	ui->playPauseButton->style()->polish(ui->playPauseButton);
 	ui->playPauseButton->setToolTip(QTStr("ContextBar.MediaControls.RestartMedia"));
