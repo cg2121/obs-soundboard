@@ -17,6 +17,7 @@
 #include <QLineEdit>
 #include <QMimeData>
 #include <QFileInfo>
+#include <QDragEnterEvent>
 
 #include "scene-tree.hpp"
 #include "media-controls.hpp"
@@ -157,7 +158,7 @@ void Soundboard::CreateSource()
 					   nullptr, nullptr);
 		obs_source_set_hidden(source, true);
 
-		ui->mediaControls->SetSource(source);
+		ui->mediaControls->SetSource(source.Get());
 	}
 
 	obs_set_output_source(8, source);
@@ -259,7 +260,7 @@ void Soundboard::LoadSource(OBSData saveData)
 		if (obs_obj_invalid(source))
 			return;
 
-		ui->mediaControls->SetSource(source);
+		ui->mediaControls->SetSource(source.Get());
 	}
 }
 

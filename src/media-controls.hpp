@@ -3,17 +3,14 @@
 #include <QWidget>
 #include <QTimer>
 #include <vector>
-#include <memory>
 #include <obs.hpp>
-
-#include "ui_media-controls.h"
 
 class Ui_MediaControls;
 
 class MediaControls : public QWidget {
 	Q_OBJECT
 
-	friend class Soundboard;
+friend class Soundboard;
 
 private:
 	std::vector<OBSSignal> sigs;
@@ -23,6 +20,7 @@ private:
 	int seek;
 	int lastSeek;
 	bool prevPaused = false;
+	bool countDownTimer = false;
 	bool isSlideshow = false;
 
 	QString FormatSeconds(int totalSeconds);
@@ -36,6 +34,8 @@ private:
 	static void OBSMediaPlay(void *data, calldata_t *calldata);
 	static void OBSMediaPause(void *data, calldata_t *calldata);
 	static void OBSMediaStarted(void *data, calldata_t *calldata);
+	static void OBSMediaNext(void *data, calldata_t *calldata);
+	static void OBSMediaPrevious(void *data, calldata_t *calldata);
 
 	std::unique_ptr<Ui_MediaControls> ui;
 
@@ -46,10 +46,10 @@ private slots:
 	void on_previousButton_clicked();
 	void on_durationLabel_clicked();
 
-	void MediaSliderClicked();
-	void MediaSliderReleased();
-	void MediaSliderHovered(int val);
-	void MediaSliderMoved(int val);
+	void AbsoluteSliderClicked();
+	void AbsoluteSliderReleased();
+	void AbsoluteSliderHovered(int val);
+	void AbsoluteSliderMoved(int val);
 	void SetSliderPosition();
 	void SetPlayingState();
 	void SetPausedState();
@@ -64,6 +64,9 @@ private slots:
 	void MoveSliderFoward(int seconds = 5);
 	void MoveSliderBackwards(int seconds = 5);
 
+	void UpdateSlideCounter();
+	void UpdateLabels(int val);
+
 public slots:
 	void PlayMedia();
 	void PauseMedia();
@@ -72,9 +75,7 @@ public:
 	MediaControls(QWidget *parent = nullptr);
 	~MediaControls();
 
-	obs_source_t *GetSource();
-	void SetSource(obs_source_t *newSource);
+	OBSSource GetSource();
+	void SetSource(OBSSource newSource);
 	bool MediaPaused();
-
-	bool countDownTimer = false;
 };

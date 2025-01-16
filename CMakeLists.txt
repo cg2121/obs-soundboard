@@ -36,7 +36,9 @@ endif()
 
 target_sources(
   ${CMAKE_PROJECT_NAME}
-  PRIVATE src/clickable-label.hpp
+  PRIVATE src/absolute-slider.cpp
+          src/absolute-slider.hpp
+          src/clickable-label.hpp
           src/media-controls.cpp
           src/media-controls.hpp
           src/media-controls.ui
@@ -45,14 +47,10 @@ target_sources(
           src/media-edit.cpp
           src/media-edit.hpp
           src/MediaEdit.ui
-          src/media-slider.cpp
-          src/media-slider.hpp
           src/plugin-support.c.in
           src/plugin-support.h
           src/scene-tree.cpp
           src/scene-tree.hpp
-          src/slider-absoluteset-style.cpp
-          src/slider-absoluteset-style.hpp
           src/slider-ignorewheel.cpp
           src/slider-ignorewheel.hpp
           src/soundboard.cpp
