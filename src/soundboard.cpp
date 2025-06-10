@@ -13,7 +13,6 @@
 #include <QDockWidget>
 #include <QMenu>
 #include <QListWidget>
-#include <QActionGroup>
 #include <QLineEdit>
 #include <QMimeData>
 #include <QFileInfo>
@@ -89,14 +88,6 @@ Soundboard::Soundboard(QWidget *parent) : QWidget(parent), ui(new Ui_Soundboard)
 			temp->setProperty(y, x->property(y));
 		}
 	}
-
-	ui->actionAdd->setToolTip(QTStr("AddSound"));
-	ui->actionRemove->setToolTip(QTStr("RemoveSound.Title"));
-	ui->actionEdit->setToolTip(QTStr("EditSound"));
-
-	QActionGroup *actionGroup = new QActionGroup(this);
-	actionGroup->addAction(ui->actionListMode);
-	actionGroup->addAction(ui->actionGridMode);
 
 	obs_frontend_add_event_callback(OnEvent, this);
 	obs_frontend_add_save_callback(OnSave, this);
@@ -486,16 +477,6 @@ void Soundboard::on_actionRemove_triggered()
 	UpdateActions();
 }
 
-void Soundboard::on_actionListMode_triggered()
-{
-	ui->list->SetGridMode(false);
-}
-
-void Soundboard::on_actionGridMode_triggered()
-{
-	ui->list->SetGridMode(true);
-}
-
 void Soundboard::on_actionDuplicate_triggered()
 {
 	MediaObj *obj = GetCurrentMediaObj();
@@ -514,17 +495,10 @@ void Soundboard::on_list_customContextMenuRequested(const QPoint &pos)
 {
 	QListWidgetItem *item = ui->list->itemAt(pos);
 
-	bool grid = ui->list->GetGridMode();
-
-	if (grid)
-		ui->actionGridMode->setChecked(true);
-	else
-		ui->actionListMode->setChecked(true);
-
 	QMenu popup(this);
 
 	popup.addAction(ui->actionAdd);
-	popup.addAction(ui->actionFilters);
+	popup.addAction(MainStr("Basic.Filters"), this, [this]() { obs_frontend_open_source_filters(source); });
 	popup.addSeparator();
 
 	if (item) {
@@ -538,18 +512,23 @@ void Soundboard::on_list_customContextMenuRequested(const QPoint &pos)
 
 	popup.addSeparator();
 
-	QMenu subMenu(QTStr("ListMode"), this);
-	subMenu.addAction(ui->actionListMode);
-	subMenu.addAction(ui->actionGridMode);
+	QMenu subMenu(MainStr("Basic.Main.ListMode"));
+	QAction *listAction = subMenu.addAction(MainStr("List"), this, [this]() { ui->list->SetGridMode(false); });
+	listAction->setCheckable(true);
+	QAction *gridAction = subMenu.addAction(MainStr("Grid"), this, [this]() { ui->list->SetGridMode(true); });
+	gridAction->setCheckable(true);
+
+	bool grid = ui->list->GetGridMode();
+
+	if (grid)
+		gridAction->setChecked(true);
+	else
+		listAction->setChecked(true);
+
 
 	popup.addMenu(&subMenu);
 
 	popup.exec(QCursor::pos());
-}
-
-void Soundboard::on_actionFilters_triggered()
-{
-	obs_frontend_open_source_filters(source);
 }
 
 void Soundboard::dragEnterEvent(QDragEnterEvent *event)

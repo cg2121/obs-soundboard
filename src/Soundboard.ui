@@ -152,24 +152,6 @@
     <string>Duplicate</string>
    </property>
   </action>
-  <action name="actionFilters">
-   <property name="text">
-    <string>Filters</string>
-   </property>
-  </action>
-  <action name="actionListMode">
-   <property name="text">
-    <string>ListMode</string>
-   </property>
-  </action>
-  <action name="actionGridMode">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>GridMode</string>
-   </property>
-  </action>
  </widget>
  <customwidgets>
   <customwidget>

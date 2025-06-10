@@ -37,11 +37,6 @@ private slots:
 	void on_list_customContextMenuRequested(const QPoint &pos);
 	void on_actionDuplicate_triggered();
 
-	void on_actionFilters_triggered();
-
-	void on_actionListMode_triggered();
-	void on_actionGridMode_triggered();
-
 	MediaObj *Add(const QString &name, const QString &path);
 	void Play(MediaObj *obj);
 
