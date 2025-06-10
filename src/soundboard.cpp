@@ -472,8 +472,8 @@ void Soundboard::on_actionRemove_triggered()
 	QString name = obj->GetName();
 
 	QMessageBox::StandardButton reply =
-		QMessageBox::question(this, QTStr("RemoveSound.Title"),
-				      QTStr("RemoveSound.Text").arg(name),
+		QMessageBox::question(this, MainStr("ConfirmRemove.Title"),
+				      MainStr("ConfirmRemove.Text").arg(name),
 				      QMessageBox::Yes | QMessageBox::No);
 
 	if (reply == QMessageBox::No)

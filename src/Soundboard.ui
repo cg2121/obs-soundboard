@@ -102,7 +102,7 @@
      <normaloff>:/res/images/plus.svg</normaloff>:/res/images/plus.svg</iconset>
    </property>
    <property name="text">
-    <string>Add</string>
+    <string>AddSound</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>false</bool>
@@ -120,7 +120,7 @@
      <normaloff>:/res/images/minus.svg</normaloff>:/res/images/minus.svg</iconset>
    </property>
    <property name="text">
-    <string>Remove</string>
+    <string>RemoveSound</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>false</bool>
@@ -138,7 +138,7 @@
      <normaloff>:/settings/images/settings/general.svg</normaloff>:/settings/images/settings/general.svg</iconset>
    </property>
    <property name="text">
-    <string>Edit</string>
+    <string>EditSound</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>false</bool>

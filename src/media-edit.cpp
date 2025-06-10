@@ -13,8 +13,9 @@
 
 MediaEdit::MediaEdit(QWidget *parent) : QDialog(parent), ui(new Ui_MediaEdit)
 {
+	obs_frontend_push_ui_translation(obs_module_get_string);
 	ui->setupUi(this);
-	setWindowTitle(QTStr("MediaProps"));
+	obs_frontend_pop_ui_translation();
 }
 
 MediaEdit::~MediaEdit() {}
