@@ -19,8 +19,8 @@ private:
 	QString prevPath;
 	std::unique_ptr<Ui_Soundboard> ui;
 
-	MediaObj *GetCurrentMediaObj();
-	QListWidgetItem *FindItem(MediaObj *obj);
+	MediaObj *getCurrentMediaObj();
+	QListWidgetItem *findItem(MediaObj *obj);
 
 	OBSSourceAutoRelease source;
 
@@ -33,31 +33,31 @@ private slots:
 	void on_actionAdd_triggered();
 	void on_actionRemove_triggered();
 	void on_actionEdit_triggered();
-	void UpdateActions();
+	void updateActions();
 	void on_list_customContextMenuRequested(const QPoint &pos);
 	void on_actionDuplicate_triggered();
 
-	MediaObj *Add(const QString &name, const QString &path);
-	void Play(MediaObj *obj);
+	MediaObj *add(const QString &name, const QString &path);
+	void play(MediaObj *obj);
 
-	void EditMediaName();
-	void MediaNameEdited(QWidget *editor);
+	void editMediaName();
+	void mediaNameEdited(QWidget *editor);
 
-	void ItemRenamed(MediaObj *obj);
+	void itemRenamed(MediaObj *obj);
 
 public:
 	Soundboard(QWidget *parent = nullptr);
 	~Soundboard();
 
-	OBSDataArray SaveMedia();
-	void LoadMedia(OBSDataArray array);
-	void LoadSource(OBSData saveData);
-	void Clear();
+	OBSDataArray saveMedia();
+	void loadMedia(OBSDataArray array);
+	void loadSource(OBSData saveData);
+	void clear();
 
-	void Save(OBSData saveData);
-	void Load(OBSData saveData);
+	void save(OBSData saveData);
+	void load(OBSData saveData);
 
-	void CreateSource();
+	void createSource();
 
 protected:
 	virtual void dragEnterEvent(QDragEnterEvent *event) override;

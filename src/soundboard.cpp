@@ -30,12 +30,12 @@
 #define QTStr(str) QString(obs_module_text(str))
 #define MainStr(str) QString(obs_frontend_get_locale_string(str))
 
-static QString GetDefaultString(QString name = "")
+static QString getDefaultString(QString name = "")
 {
 	if (name.isEmpty())
 		name = QTStr("Sound");
 
-	if (!MediaObj::FindByName(name))
+	if (!MediaObj::findByName(name))
 		return name;
 
 	int i = 2;
@@ -43,34 +43,34 @@ static QString GetDefaultString(QString name = "")
 	for (;;) {
 		QString out = name + " " + QString::number(i);
 
-		if (!MediaObj::FindByName(out))
+		if (!MediaObj::findByName(out))
 			return out;
 
 		i++;
 	}
 }
 
-static void OnSave(obs_data_t *saveData, bool saving, void *data)
+static void onSave(obs_data_t *saveData, bool saving, void *data)
 {
 	Soundboard *sb = static_cast<Soundboard *>(data);
 
 	if (saving)
-		sb->Save(saveData);
+		sb->save(saveData);
 	else
-		sb->Load(saveData);
+		sb->load(saveData);
 }
 
-static void OnEvent(enum obs_frontend_event event, void *data)
+static void onEvent(enum obs_frontend_event event, void *data)
 {
 	Soundboard *sb = static_cast<Soundboard *>(data);
 
 	switch (event) {
 	case OBS_FRONTEND_EVENT_FINISHED_LOADING:
 	case OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED:
-		sb->CreateSource();
+		sb->createSource();
 		break;
 	case OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP:
-		sb->Clear();
+		sb->clear();
 	default:
 		break;
 	};
@@ -89,15 +89,15 @@ Soundboard::Soundboard(QWidget *parent) : QWidget(parent), ui(new Ui_Soundboard)
 		}
 	}
 
-	obs_frontend_add_event_callback(OnEvent, this);
-	obs_frontend_add_save_callback(OnSave, this);
+	obs_frontend_add_event_callback(onEvent, this);
+	obs_frontend_add_save_callback(onSave, this);
 
 	ui->list->setItemDelegate(new MediaRenameDelegate(ui->list));
 
 	renameMedia = new QAction(MainStr("Rename"), this);
 	renameMedia->setShortcutContext(Qt::WidgetWithChildrenShortcut);
 	connect(renameMedia, &QAction::triggered, this,
-		&Soundboard::EditMediaName);
+		&Soundboard::editMediaName);
 
 #ifdef __APPLE__
 	renameMedia->setShortcut({Qt::Key_Return});
@@ -108,16 +108,16 @@ Soundboard::Soundboard(QWidget *parent) : QWidget(parent), ui(new Ui_Soundboard)
 	addAction(renameMedia);
 
 	connect(ui->list->itemDelegate(), &QAbstractItemDelegate::closeEditor,
-		this, &Soundboard::MediaNameEdited);
+		this, &Soundboard::mediaNameEdited);
 }
 
 Soundboard::~Soundboard()
 {
-	obs_frontend_remove_event_callback(OnEvent, this);
-	obs_frontend_remove_save_callback(OnSave, this);
+	obs_frontend_remove_event_callback(onEvent, this);
+	obs_frontend_remove_save_callback(onSave, this);
 }
 
-MediaObj *Soundboard::GetCurrentMediaObj()
+MediaObj *Soundboard::getCurrentMediaObj()
 {
 	QListWidgetItem *item = ui->list->currentItem();
 
@@ -125,23 +125,23 @@ MediaObj *Soundboard::GetCurrentMediaObj()
 		return nullptr;
 
 	QString uuid = item->data(Qt::UserRole).toString();
-	return MediaObj::FindByUUID(uuid);
+	return MediaObj::findByUUID(uuid);
 }
 
-QListWidgetItem *Soundboard::FindItem(MediaObj *obj)
+QListWidgetItem *Soundboard::findItem(MediaObj *obj)
 {
 	for (int i = 0; i < ui->list->count(); i++) {
 		QListWidgetItem *item = ui->list->item(i);
 		QString uuid = item->data(Qt::UserRole).toString();
 
-		if (uuid == obj->GetUUID())
+		if (uuid == obj->getUUID())
 			return item;
 	}
 
 	return nullptr;
 }
 
-void Soundboard::CreateSource()
+void Soundboard::createSource()
 {
 	if (obs_obj_invalid(source)) {
 		source = obs_source_create("ffmpeg_source",
@@ -155,7 +155,7 @@ void Soundboard::CreateSource()
 	obs_set_output_source(8, source);
 }
 
-OBSDataArray Soundboard::SaveMedia()
+OBSDataArray Soundboard::saveMedia()
 {
 	OBSDataArrayAutoRelease array = obs_data_array_create();
 
@@ -163,19 +163,19 @@ OBSDataArray Soundboard::SaveMedia()
 		QListWidgetItem *item = ui->list->item(i);
 		QString uuid = item->data(Qt::UserRole).toString();
 
-		MediaObj *obj = MediaObj::FindByUUID(uuid);
+		MediaObj *obj = MediaObj::findByUUID(uuid);
 
 		OBSDataAutoRelease settings = obs_data_create();
 		obs_data_set_string(settings, "name",
-				    QT_TO_UTF8(obj->GetName()));
+				    QT_TO_UTF8(obj->getName()));
 		obs_data_set_string(settings, "path",
-				    QT_TO_UTF8(obj->GetPath()));
-		obs_data_set_bool(settings, "loop", obj->LoopEnabled());
+				    QT_TO_UTF8(obj->getPath()));
+		obs_data_set_bool(settings, "loop", obj->loopEnabled());
 		obs_data_set_double(settings, "volume",
-				    (double)obj->GetVolume());
+				    (double)obj->getVolume());
 
 		OBSDataArrayAutoRelease hotkeyArray =
-			obs_hotkey_save(obj->GetHotkey());
+			obs_hotkey_save(obj->getHotkey());
 		obs_data_set_array(settings, "sound_hotkey", hotkeyArray);
 
 		obs_data_array_push_back(array, settings);
@@ -184,7 +184,7 @@ OBSDataArray Soundboard::SaveMedia()
 	return array.Get();
 }
 
-void Soundboard::LoadMedia(OBSDataArray array)
+void Soundboard::loadMedia(OBSDataArray array)
 {
 	for (size_t i = 0; i < obs_data_array_count(array); i++) {
 		OBSDataAutoRelease settings = obs_data_array_item(array, i);
@@ -201,19 +201,19 @@ void Soundboard::LoadMedia(OBSDataArray array)
 		OBSDataArrayAutoRelease hotkeyArray =
 			obs_data_get_array(settings, "sound_hotkey");
 
-		MediaObj *obj = Add(name, path);
-		obs_hotkey_load(obj->GetHotkey(), hotkeyArray);
-		obj->SetLoopEnabled(loop);
-		obj->SetVolume(volume);
+		MediaObj *obj = add(name, path);
+		obs_hotkey_load(obj->getHotkey(), hotkeyArray);
+		obj->setLoopEnabled(loop);
+		obj->setVolume(volume);
 	}
 }
 
-void Soundboard::Save(OBSData saveData)
+void Soundboard::save(OBSData saveData)
 {
 	QMainWindow *window = (QMainWindow *)obs_frontend_get_main_window();
 	QDockWidget *dock = static_cast<QDockWidget *>(parent());
 
-	OBSDataArray array = SaveMedia();
+	OBSDataArray array = saveMedia();
 	obs_data_set_array(saveData, "soundboard_array", array);
 
 	if (!obs_obj_invalid(source)) {
@@ -228,17 +228,17 @@ void Soundboard::Save(OBSData saveData)
 	obs_data_set_int(saveData, "dock_area", window->dockWidgetArea(dock));
 	obs_data_set_bool(saveData, "grid_mode", ui->list->GetGridMode());
 
-	MediaObj *obj = GetCurrentMediaObj();
+	MediaObj *obj = getCurrentMediaObj();
 
 	if (obj)
 		obs_data_set_string(saveData, "current_sound",
-				    QT_TO_UTF8(obj->GetName()));
+				    QT_TO_UTF8(obj->getName()));
 
 	obs_data_set_bool(saveData, "use_countdown",
 			  ui->mediaControls->countDownTimer);
 }
 
-void Soundboard::LoadSource(OBSData saveData)
+void Soundboard::loadSource(OBSData saveData)
 {
 	OBSDataAutoRelease sourceData =
 		obs_data_get_obj(saveData, "soundboard_source");
@@ -255,17 +255,17 @@ void Soundboard::LoadSource(OBSData saveData)
 	}
 }
 
-void Soundboard::Load(OBSData saveData)
+void Soundboard::load(OBSData saveData)
 {
 	QMainWindow *window =
 		static_cast<QMainWindow *>(obs_frontend_get_main_window());
 	QDockWidget *dock = window->findChild<QDockWidget *>("SoundboardDock");
 
-	LoadSource(saveData);
+	loadSource(saveData);
 
 	OBSDataArrayAutoRelease array =
 		obs_data_get_array(saveData, "soundboard_array");
-	LoadMedia(array.Get());
+	loadMedia(array.Get());
 
 	const char *geometry = obs_data_get_string(saveData, "dock_geometry");
 
@@ -293,8 +293,8 @@ void Soundboard::Load(OBSData saveData)
 	QString lastSound = obs_data_get_string(saveData, "current_sound");
 
 	if (!lastSound.isEmpty()) {
-		MediaObj *obj = MediaObj::FindByName(lastSound);
-		QListWidgetItem *item = FindItem(obj);
+		MediaObj *obj = MediaObj::findByName(lastSound);
+		QListWidgetItem *item = findItem(obj);
 
 		if (item)
 			ui->list->setCurrentItem(item);
@@ -308,7 +308,7 @@ void Soundboard::Load(OBSData saveData)
 	ui->mediaControls->countDownTimer = countdown;
 }
 
-void Soundboard::Clear()
+void Soundboard::clear()
 {
 	ui->mediaControls->countDownTimer = false;
 	ui->mediaControls->SetSource(nullptr);
@@ -320,19 +320,19 @@ void Soundboard::Clear()
 		QListWidgetItem *item = ui->list->item(i);
 		QString uuid = item->data(Qt::UserRole).toString();
 
-		MediaObj *obj = MediaObj::FindByUUID(uuid);
+		MediaObj *obj = MediaObj::findByUUID(uuid);
 		delete obj;
 		obj = nullptr;
 	}
 
 	ui->list->clear();
 
-	UpdateActions();
+	updateActions();
 }
 
-void Soundboard::Play(MediaObj *obj)
+void Soundboard::play(MediaObj *obj)
 {
-	QString path = obj->GetPath();
+	QString path = obj->getPath();
 
 	if (prevPath == path) {
 		obs_source_media_restart(source);
@@ -341,10 +341,10 @@ void Soundboard::Play(MediaObj *obj)
 
 	prevPath = path;
 
-	QListWidgetItem *item = FindItem(obj);
+	QListWidgetItem *item = findItem(obj);
 
 	OBSDataAutoRelease settings = obs_data_create();
-	obs_data_set_bool(settings, "looping", obj->LoopEnabled());
+	obs_data_set_bool(settings, "looping", obj->loopEnabled());
 	obs_data_set_string(settings, "local_file", QT_TO_UTF8(path));
 	obs_data_set_bool(settings, "is_local_file", true);
 	obs_source_update(source, settings);
@@ -352,29 +352,29 @@ void Soundboard::Play(MediaObj *obj)
 	ui->list->setCurrentItem(item);
 }
 
-void Soundboard::ItemRenamed(MediaObj *obj)
+void Soundboard::itemRenamed(MediaObj *obj)
 {
-	QListWidgetItem *item = FindItem(obj);
+	QListWidgetItem *item = findItem(obj);
 
 	if (item)
-		item->setText(obj->GetName());
+		item->setText(obj->getName());
 }
 
-MediaObj *Soundboard::Add(const QString &name_, const QString &path)
+MediaObj *Soundboard::add(const QString &name_, const QString &path)
 {
-	QString name = GetDefaultString(name_);
+	QString name = getDefaultString(name_);
 
 	MediaObj *obj = new MediaObj(name, path);
 
 	QListWidgetItem *item = new QListWidgetItem(name);
-	item->setData(Qt::UserRole, obj->GetUUID());
+	item->setData(Qt::UserRole, obj->getUUID());
 	ui->list->addItem(item);
 	ui->list->setCurrentItem(item);
 
-	connect(obj, &MediaObj::HotkeyPressed, this, &Soundboard::Play);
-	connect(obj, &MediaObj::Renamed, this, &Soundboard::ItemRenamed);
+	connect(obj, &MediaObj::hotkeyPressed, this, &Soundboard::play);
+	connect(obj, &MediaObj::renamed, this, &Soundboard::itemRenamed);
 
-	UpdateActions();
+	updateActions();
 
 	return obj;
 }
@@ -384,23 +384,23 @@ void Soundboard::on_actionAdd_triggered()
 	MediaEdit edit(this);
 
 	auto added = [&, this]() {
-		QString name = edit.GetName();
-		QString path = edit.GetPath();
-		bool loop = edit.LoopChecked();
+		QString name = edit.getName();
+		QString path = edit.getPath();
+		bool loop = edit.loopChecked();
 
-		MediaObj *obj = Add(name, path);
-		obj->SetLoopEnabled(loop);
+		MediaObj *obj = add(name, path);
+		obj->setLoopEnabled(loop);
 	};
 
 	connect(&edit, &QDialog::accepted, this, added);
 
-	edit.SetName(GetDefaultString());
+	edit.setName(getDefaultString());
 	edit.exec();
 }
 
 void Soundboard::on_actionEdit_triggered()
 {
-	MediaObj *obj = GetCurrentMediaObj();
+	MediaObj *obj = getCurrentMediaObj();
 
 	if (!obj)
 		return;
@@ -408,29 +408,29 @@ void Soundboard::on_actionEdit_triggered()
 	MediaEdit edit(this);
 
 	auto edited = [&]() {
-		QString name = edit.GetName();
-		QString path = edit.GetPath();
-		bool loop = edit.LoopChecked();
+		QString name = edit.getName();
+		QString path = edit.getPath();
+		bool loop = edit.loopChecked();
 
-		obj->SetName(name);
-		obj->SetPath(path);
-		obj->SetLoopEnabled(loop);
+		obj->setName(name);
+		obj->setPath(path);
+		obj->setLoopEnabled(loop);
 	};
 
 	connect(&edit, &QDialog::accepted, this, edited);
 
-	edit.SetName(obj->GetName());
-	edit.SetPath(obj->GetPath());
-	edit.SetLoopChecked(obj->LoopEnabled());
+	edit.setName(obj->getName());
+	edit.setPath(obj->getPath());
+	edit.setLoopChecked(obj->loopEnabled());
 	edit.exec();
 }
 
 void Soundboard::on_list_itemClicked()
 {
-	Play(GetCurrentMediaObj());
+	play(getCurrentMediaObj());
 }
 
-void Soundboard::UpdateActions()
+void Soundboard::updateActions()
 {
 	bool enable = ui->list->count() > 0;
 
@@ -455,12 +455,12 @@ void Soundboard::UpdateActions()
 
 void Soundboard::on_actionRemove_triggered()
 {
-	MediaObj *obj = GetCurrentMediaObj();
+	MediaObj *obj = getCurrentMediaObj();
 
 	if (!obj)
 		return;
 
-	QString name = obj->GetName();
+	QString name = obj->getName();
 
 	QMessageBox::StandardButton reply =
 		QMessageBox::question(this, MainStr("ConfirmRemove.Title"),
@@ -470,25 +470,25 @@ void Soundboard::on_actionRemove_triggered()
 	if (reply == QMessageBox::No)
 		return;
 
-	QListWidgetItem *item = FindItem(obj);
+	QListWidgetItem *item = findItem(obj);
 	delete ui->list->takeItem(ui->list->row(item));
 	obj->deleteLater();
 
-	UpdateActions();
+	updateActions();
 }
 
 void Soundboard::on_actionDuplicate_triggered()
 {
-	MediaObj *obj = GetCurrentMediaObj();
+	MediaObj *obj = getCurrentMediaObj();
 
 	if (!obj)
 		return;
 
-	QString name = GetDefaultString(obj->GetName());
-	QString path = obj->GetPath();
-	bool loop = obj->LoopEnabled();
-	MediaObj *newObj = Add(name, path);
-	newObj->SetLoopEnabled(loop);
+	QString name = getDefaultString(obj->getName());
+	QString path = obj->getPath();
+	bool loop = obj->loopEnabled();
+	MediaObj *newObj = add(name, path);
+	newObj->setLoopEnabled(loop);
 }
 
 void Soundboard::on_list_customContextMenuRequested(const QPoint &pos)
@@ -568,11 +568,11 @@ void Soundboard::dropEvent(QDropEvent *event)
 		if (!supportedExt.contains(ext))
 			continue;
 
-		Add(name, path);
+		add(name, path);
 	}
 }
 
-void Soundboard::EditMediaName()
+void Soundboard::editMediaName()
 {
 	removeAction(renameMedia);
 	QListWidgetItem *item = ui->list->currentItem();
@@ -583,18 +583,18 @@ void Soundboard::EditMediaName()
 	item->setFlags(flags);
 }
 
-void Soundboard::MediaNameEdited(QWidget *editor)
+void Soundboard::mediaNameEdited(QWidget *editor)
 {
 	addAction(renameMedia);
-	MediaObj *obj = GetCurrentMediaObj();
+	MediaObj *obj = getCurrentMediaObj();
 	QLineEdit *edit = qobject_cast<QLineEdit *>(editor);
 	QString name = edit->text().trimmed();
 
 	if (!obj)
 		return;
 
-	QListWidgetItem *item = FindItem(obj);
-	QString origName = obj->GetName();
+	QListWidgetItem *item = findItem(obj);
+	QString origName = obj->getName();
 
 	if (name == origName) {
 		item->setText(origName);
@@ -608,14 +608,14 @@ void Soundboard::MediaNameEdited(QWidget *editor)
 		return;
 	}
 
-	if (MediaObj::FindByName(name)) {
+	if (MediaObj::findByName(name)) {
 		item->setText(origName);
 		QMessageBox::warning(this, MainStr("NameExists.Title"),
 				     MainStr("NameExists.Text"));
 		return;
 	}
 
-	obj->SetName(name);
+	obj->setName(name);
 }
 
 MediaRenameDelegate::MediaRenameDelegate(QObject *parent)

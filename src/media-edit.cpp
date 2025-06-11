@@ -20,7 +20,7 @@ MediaEdit::MediaEdit(QWidget *parent) : QDialog(parent), ui(new Ui_MediaEdit)
 
 MediaEdit::~MediaEdit() {}
 
-void MediaEdit::SetName(const QString &name)
+void MediaEdit::setName(const QString &name)
 {
 	ui->name->setText(name);
 
@@ -28,27 +28,27 @@ void MediaEdit::SetName(const QString &name)
 		origText = name;
 }
 
-QString MediaEdit::GetName()
+QString MediaEdit::getName()
 {
 	return ui->name->text();
 }
 
-void MediaEdit::SetPath(const QString &path)
+void MediaEdit::setPath(const QString &path)
 {
 	ui->path->setText(path);
 }
 
-QString MediaEdit::GetPath()
+QString MediaEdit::getPath()
 {
 	return ui->path->text();
 }
 
-void MediaEdit::SetLoopChecked(bool checked)
+void MediaEdit::setLoopChecked(bool checked)
 {
 	ui->loop->setChecked(checked);
 }
 
-bool MediaEdit::LoopChecked()
+bool MediaEdit::loopChecked()
 {
 	return ui->loop->isChecked();
 }
@@ -78,7 +78,7 @@ void MediaEdit::on_buttonBox_clicked(QAbstractButton *button)
 	if (val == QDialogButtonBox::RejectRole) {
 		close();
 	} else if (val == QDialogButtonBox::AcceptRole) {
-		QString name = GetName();
+		QString name = getName();
 
 		if (name.isEmpty()) {
 			QMessageBox::warning(this, MainStr("EmptyName.Title"),
@@ -86,7 +86,7 @@ void MediaEdit::on_buttonBox_clicked(QAbstractButton *button)
 			return;
 		}
 
-		if (origText != name && MediaObj::FindByName(name)) {
+		if (origText != name && MediaObj::findByName(name)) {
 			QMessageBox::warning(this, MainStr("NameExists.Title"),
 					     MainStr("NameExists.Text"));
 			return;

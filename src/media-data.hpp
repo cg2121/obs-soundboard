@@ -20,35 +20,35 @@ private:
 	obs_hotkey_id hotkey = OBS_INVALID_HOTKEY_ID;
 
 private slots:
-	void Pressed();
-	void Released();
+	void pressed();
+	void released();
 
 public:
 	MediaObj(const QString &name, const QString &path);
 	~MediaObj();
 
-	static MediaObj *FindByUUID(const QString &uuid);
-	static MediaObj *FindByName(const QString &name);
+	static MediaObj *findByUUID(const QString &uuid);
+	static MediaObj *findByName(const QString &name);
 
-	QString GetUUID();
+	QString getUUID();
 
-	void SetName(const QString &newName);
-	QString GetName();
+	void setName(const QString &newName);
+	QString getName();
 
-	void SetPath(const QString &newPath);
-	QString GetPath();
+	void setPath(const QString &newPath);
+	QString getPath();
 
-	obs_hotkey_id GetHotkey();
+	obs_hotkey_id getHotkey();
 
-	void SetLoopEnabled(bool enable);
-	bool LoopEnabled();
+	void setLoopEnabled(bool enable);
+	bool loopEnabled();
 
-	void SetVolume(float volume);
-	float GetVolume();
+	void setVolume(float volume);
+	float getVolume();
 
 signals:
-	void HotkeyPressed(MediaObj *obj);
-	void HotkeyReleased(MediaObj *obj);
+	void hotkeyPressed(MediaObj *obj);
+	void hotkeyReleased(MediaObj *obj);
 
-	void Renamed(MediaObj *obj);
+	void renamed(MediaObj *obj);
 };

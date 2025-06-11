@@ -21,12 +21,12 @@ public:
 	MediaEdit(QWidget *parent = nullptr);
 	~MediaEdit();
 
-	void SetName(const QString &name);
-	QString GetName();
+	void setName(const QString &name);
+	QString getName();
 
-	void SetPath(const QString &path);
-	QString GetPath();
+	void setPath(const QString &path);
+	QString getPath();
 
-	void SetLoopChecked(bool checked);
-	bool LoopChecked();
+	void setLoopChecked(bool checked);
+	bool loopChecked();
 };

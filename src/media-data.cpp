@@ -23,9 +23,9 @@ MediaObj::MediaObj(const QString &name_, const QString &path_)
 		MediaObj *sound = static_cast<MediaObj *>(data);
 
 		if (pressed)
-			QMetaObject::invokeMethod(sound, "Pressed");
+			QMetaObject::invokeMethod(sound, &MediaObj::pressed);
 		else
-			QMetaObject::invokeMethod(sound, "Released");
+			QMetaObject::invokeMethod(sound, &MediaObj::released);
 	};
 
 	hotkey = obs_hotkey_register_frontend(QT_TO_UTF8(hotkeyName),
@@ -43,7 +43,7 @@ MediaObj::~MediaObj()
 			 mediaItems.end());
 }
 
-MediaObj *MediaObj::FindByName(const QString &name)
+MediaObj *MediaObj::findByName(const QString &name)
 {
 	for (auto &media : mediaItems) {
 		if (media->name == name)
@@ -53,7 +53,7 @@ MediaObj *MediaObj::FindByName(const QString &name)
 	return nullptr;
 }
 
-MediaObj *MediaObj::FindByUUID(const QString &uuid)
+MediaObj *MediaObj::findByUUID(const QString &uuid)
 {
 	for (auto &media : mediaItems) {
 		if (media->uuid == uuid)
@@ -63,12 +63,12 @@ MediaObj *MediaObj::FindByUUID(const QString &uuid)
 	return nullptr;
 }
 
-QString MediaObj::GetUUID()
+QString MediaObj::getUUID()
 {
 	return uuid;
 }
 
-void MediaObj::SetName(const QString &newName)
+void MediaObj::setName(const QString &newName)
 {
 	if (newName.isEmpty() || name == newName)
 		return;
@@ -79,55 +79,55 @@ void MediaObj::SetName(const QString &newName)
 	obs_hotkey_set_name(hotkey, QT_TO_UTF8(hotkeyName));
 	obs_hotkey_set_description(hotkey, QT_TO_UTF8(hotkeyName));
 
-	emit Renamed(this);
+	emit renamed(this);
 }
 
-QString MediaObj::GetName()
+QString MediaObj::getName()
 {
 	return name;
 }
 
-void MediaObj::SetPath(const QString &newPath)
+void MediaObj::setPath(const QString &newPath)
 {
 	path = newPath;
 }
 
-QString MediaObj::GetPath()
+QString MediaObj::getPath()
 {
 	return path;
 }
 
-obs_hotkey_id MediaObj::GetHotkey()
+obs_hotkey_id MediaObj::getHotkey()
 {
 	return hotkey;
 }
 
-void MediaObj::SetLoopEnabled(bool enable)
+void MediaObj::setLoopEnabled(bool enable)
 {
 	loop = enable;
 }
 
-bool MediaObj::LoopEnabled()
+bool MediaObj::loopEnabled()
 {
 	return loop;
 }
 
-void MediaObj::SetVolume(float newVolume)
+void MediaObj::setVolume(float newVolume)
 {
 	volume = newVolume;
 }
 
-float MediaObj::GetVolume()
+float MediaObj::getVolume()
 {
 	return volume;
 }
 
-void MediaObj::Pressed()
+void MediaObj::pressed()
 {
-	emit HotkeyPressed(this);
+	emit hotkeyPressed(this);
 }
 
-void MediaObj::Released()
+void MediaObj::released()
 {
-	emit HotkeyReleased(this);
+	emit hotkeyReleased(this);
 }
