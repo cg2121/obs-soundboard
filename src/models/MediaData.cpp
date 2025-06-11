@@ -1,4 +1,4 @@
-#include "media-data.hpp"
+#include "MediaData.hpp"
 #include <util/platform.h>
 #include <util/util.hpp>
 #include <obs-module.h>

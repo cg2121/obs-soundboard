@@ -1,6 +1,7 @@
 #pragma once
 
-#include "obs.hpp"
+#include <obs.hpp>
+
 #include <QObject>
 #include <vector>
 

@@ -1,29 +1,32 @@
+#include "Soundboard.hpp"
+#include "ui_Soundboard.h"
+
 #include <obs-frontend-api.h>
+#include <obs-hotkey.h>
 #include <obs-module.h>
 #include <util/platform.h>
-#include <obs-hotkey.h>
 #include <util/util.hpp>
+
 #include "plugin-support.h"
-#include "soundboard.hpp"
-#include "media-edit.hpp"
+
+#include "components/SceneTree.hpp"
+#include "components/MediaControls.hpp"
+#include "dialogs/MediaEdit.hpp"
+#include "models/MediaData.hpp"
+
 #include <QAction>
-#include <QMainWindow>
-#include <QObject>
-#include <QMessageBox>
 #include <QDockWidget>
-#include <QMenu>
-#include <QListWidget>
-#include <QLineEdit>
-#include <QMimeData>
-#include <QFileInfo>
 #include <QDragEnterEvent>
+#include <QFileInfo>
+#include <QLineEdit>
+#include <QListWidget>
+#include <QMainWindow>
+#include <QMenu>
+#include <QMessageBox>
+#include <QMimeData>
+#include <QObject>
 
-#include "scene-tree.hpp"
-#include "media-controls.hpp"
-
-#include "media-data.hpp"
-
-#include "ui_Soundboard.h"
+#include "moc_Soundboard.cpp"
 
 #define QT_UTF8(str) QString::fromUtf8(str, -1)
 #define QT_TO_UTF8(str) str.toUtf8().constData()

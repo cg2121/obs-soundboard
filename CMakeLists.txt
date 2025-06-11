@@ -32,29 +32,29 @@ if(ENABLE_QT)
     PROPERTIES AUTOMOC ON
                AUTOUIC ON
                AUTORCC ON)
+
+  set_property(TARGET  ${CMAKE_PROJECT_NAME} APPEND PROPERTY AUTOUIC_SEARCH_PATHS src/forms)
 endif()
 
 target_sources(
   ${CMAKE_PROJECT_NAME}
-  PRIVATE src/absolute-slider.cpp
-          src/absolute-slider.hpp
-          src/clickable-label.hpp
-          src/media-controls.cpp
-          src/media-controls.hpp
-          src/media-controls.ui
-          src/media-data.cpp
-          src/media-data.hpp
-          src/media-edit.cpp
-          src/media-edit.hpp
-          src/MediaEdit.ui
+  PRIVATE src/components/AbsoluteSlider.cpp
+          src/components/AbsoluteSlider.hpp
+          src/components/ClickableLabel.hpp
+          src/components/MediaControls.cpp
+          src/components/MediaControls.hpp
+          src/components/SceneTree.cpp
+          src/components/SceneTree.hpp
+          src/dialogs/MediaEdit.cpp
+          src/dialogs/MediaEdit.hpp
+          src/forms/MediaControls.ui
+          src/forms/MediaEdit.ui
+          src/forms/Soundboard.ui
+          src/models/MediaData.cpp
+          src/models/MediaData.hpp
           src/plugin-support.c.in
           src/plugin-support.h
-          src/scene-tree.cpp
-          src/scene-tree.hpp
-          src/slider-ignorewheel.cpp
-          src/slider-ignorewheel.hpp
-          src/soundboard.cpp
-          src/soundboard.hpp
-          src/Soundboard.ui)
+          src/Soundboard.cpp
+          src/Soundboard.hpp)
 
 set_target_properties_plugin(${CMAKE_PROJECT_NAME} PROPERTIES OUTPUT_NAME ${_name})

@@ -1,12 +1,13 @@
-#include "moc_media-controls.cpp"
-#include <obs-module.h>
+#include "MediaControls.hpp"
+#include "ui_MediaControls.h"
+
+#include <obs-frontend-api.h>
+
 #include <QToolTip>
-#include <QStyle>
-#include <QMenu>
 
-#include "ui_media-controls.h"
+#include "moc_MediaControls.cpp"
 
-#define QTStr(str) QString(obs_module_text(str))
+#define MainStr(str) QString(obs_frontend_get_locale_string(str))
 
 void MediaControls::OBSMediaStopped(void *data, calldata_t *)
 {
@@ -47,10 +48,6 @@ void MediaControls::OBSMediaPrevious(void *data, calldata_t *)
 MediaControls::MediaControls(QWidget *parent) : QWidget(parent), ui(new Ui::MediaControls)
 {
 	ui->setupUi(this);
-	ui->playPauseButton->setProperty("class", "icon-media-play btn-tool");
-	ui->previousButton->setProperty("class", "icon-media-prev btn-tool");
-	ui->nextButton->setProperty("class", "icon-media-next btn-tool");
-	ui->stopButton->setProperty("class", "icon-media-stop btn-tool");
 	setFocusPolicy(Qt::StrongFocus);
 
 	connect(&mediaTimer, &QTimer::timeout, this, &MediaControls::SetSliderPosition);
@@ -187,7 +184,7 @@ void MediaControls::StartMediaTimer()
 		return;
 
 	if (!mediaTimer.isActive())
-		mediaTimer.start(16);
+		mediaTimer.start(1000);
 }
 
 void MediaControls::StopMediaTimer()
@@ -199,10 +196,10 @@ void MediaControls::StopMediaTimer()
 void MediaControls::SetPlayingState()
 {
 	ui->slider->setEnabled(true);
-	ui->playPauseButton->setProperty("class", "icon-media-pause btn-tool");
+	ui->playPauseButton->setProperty("class", "icon-media-pause");
 	ui->playPauseButton->style()->unpolish(ui->playPauseButton);
 	ui->playPauseButton->style()->polish(ui->playPauseButton);
-	ui->playPauseButton->setToolTip(QTStr("ContextBar.MediaControls.PauseMedia"));
+	ui->playPauseButton->setToolTip(MainStr("ContextBar.MediaControls.PauseMedia"));
 
 	prevPaused = false;
 
@@ -212,20 +209,20 @@ void MediaControls::SetPlayingState()
 
 void MediaControls::SetPausedState()
 {
-	ui->playPauseButton->setProperty("class", "icon-media-play btn-tool");
+	ui->playPauseButton->setProperty("class", "icon-media-play");
 	ui->playPauseButton->style()->unpolish(ui->playPauseButton);
 	ui->playPauseButton->style()->polish(ui->playPauseButton);
-	ui->playPauseButton->setToolTip(QTStr("ContextBar.MediaControls.PlayMedia"));
+	ui->playPauseButton->setToolTip(MainStr("ContextBar.MediaControls.PlayMedia"));
 
 	StopMediaTimer();
 }
 
 void MediaControls::SetRestartState()
 {
-	ui->playPauseButton->setProperty("class", "icon-media-restart btn-tool");
+	ui->playPauseButton->setProperty("class", "icon-media-restart");
 	ui->playPauseButton->style()->unpolish(ui->playPauseButton);
 	ui->playPauseButton->style()->polish(ui->playPauseButton);
-	ui->playPauseButton->setToolTip(QTStr("ContextBar.MediaControls.RestartMedia"));
+	ui->playPauseButton->setToolTip(MainStr("ContextBar.MediaControls.RestartMedia"));
 
 	ui->slider->setValue(0);
 
@@ -458,7 +455,7 @@ void MediaControls::MoveSliderFoward(int seconds)
 	if (!source)
 		return;
 
-	int64_t ms = obs_source_media_get_time(source);
+	int ms = obs_source_media_get_time(source);
 	ms += seconds * 1000;
 
 	obs_source_media_set_time(source, ms);
@@ -472,7 +469,7 @@ void MediaControls::MoveSliderBackwards(int seconds)
 	if (!source)
 		return;
 
-	int64_t ms = obs_source_media_get_time(source);
+	int ms = obs_source_media_get_time(source);
 	ms -= seconds * 1000;
 
 	obs_source_media_set_time(source, ms);
@@ -493,10 +490,10 @@ void MediaControls::UpdateSlideCounter()
 	calldata_t cd = {};
 
 	proc_handler_call(ph, "current_index", &cd);
-	int slide = (int)calldata_int(&cd, "current_index");
+	int slide = calldata_int(&cd, "current_index");
 
 	proc_handler_call(ph, "total_files", &cd);
-	int total = (int)calldata_int(&cd, "total_files");
+	int total = calldata_int(&cd, "total_files");
 	calldata_free(&cd);
 
 	if (total > 0) {

@@ -3,8 +3,8 @@
 #include <QDialog>
 #include <memory>
 
-class Ui_MediaEdit;
 class QAbstractButton;
+class Ui_MediaEdit;
 
 class MediaEdit : public QDialog {
 	Q_OBJECT

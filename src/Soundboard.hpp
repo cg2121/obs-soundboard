@@ -1,15 +1,18 @@
 #pragma once
 
-#include "obs.hpp"
 #include <QWidget>
-#include <QStyledItemDelegate>
+
+#include <obs.hpp>
+
 #include <QPointer>
+#include <QStyledItemDelegate>
+
 #include <memory>
 
-class SceneTree;
 class MediaControls;
 class MediaObj;
 class QListWidgetItem;
+class SceneTree;
 class Ui_Soundboard;
 
 class Soundboard : public QWidget {

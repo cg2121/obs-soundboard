@@ -1,12 +1,16 @@
-#include "media-edit.hpp"
-#include "media-data.hpp"
-#include <obs-module.h>
+#include "MediaEdit.hpp"
+#include "ui_MediaEdit.h"
+
 #include <obs-frontend-api.h>
+#include <obs-module.h>
+
+#include "models/MediaData.hpp"
+
+#include <QMessageBox>
 #include <QFileDialog>
 #include <QStandardPaths>
-#include <QMessageBox>
 
-#include "ui_MediaEdit.h"
+#include "moc_MediaEdit.cpp"
 
 #define QTStr(str) QString(obs_module_text(str))
 #define MainStr(str) QString(obs_frontend_get_locale_string(str))

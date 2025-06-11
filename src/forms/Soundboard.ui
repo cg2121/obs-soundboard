@@ -157,12 +157,12 @@
   <customwidget>
    <class>SceneTree</class>
    <extends>QListWidget</extends>
-   <header>scene-tree.hpp</header>
+   <header>components/SceneTree.hpp</header>
   </customwidget>
   <customwidget>
    <class>MediaControls</class>
    <extends>QWidget</extends>
-   <header>media-controls.hpp</header>
+   <header>components/MediaControls.hpp</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
