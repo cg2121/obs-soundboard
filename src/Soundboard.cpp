@@ -410,6 +410,8 @@ void Soundboard::on_actionEdit_triggered()
 	edit.setPath(obj->getPath());
 	edit.setLoopChecked(obj->loopEnabled());
 	edit.exec();
+
+	prevPath = "";
 }
 
 void Soundboard::on_list_itemClicked()
