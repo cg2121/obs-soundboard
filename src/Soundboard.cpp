@@ -153,7 +153,7 @@ void Soundboard::createSource()
 		ui->mediaControls->SetSource(source.Get());
 	}
 
-	obs_set_output_source(8, source);
+	obs_set_output_source(63, source);
 }
 
 OBSDataArray Soundboard::saveMedia()
