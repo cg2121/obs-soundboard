@@ -30,51 +30,53 @@
 #define QTStr(str) QString(obs_module_text(str))
 #define MainStr(str) QString(obs_frontend_get_locale_string(str))
 
-static QString getDefaultString(QString name = "")
-{
-	if (name.isEmpty())
-		name = QTStr("Sound");
+namespace {
+	QString getDefaultString(QString name = "")
+	{
+		if (name.isEmpty())
+			name = QTStr("Sound");
 
-	if (!MediaObj::findByName(name))
-		return name;
+		if (!MediaObj::findByName(name))
+			return name;
 
-	int i = 2;
+		int i = 2;
 
-	for (;;) {
-		QString out = name + " " + QString::number(i);
+		for (;;) {
+			QString out = name + " " + QString::number(i);
 
-		if (!MediaObj::findByName(out))
-			return out;
+			if (!MediaObj::findByName(out))
+				return out;
 
-		i++;
+			i++;
+		}
 	}
-}
 
-static void onSave(obs_data_t *saveData, bool saving, void *data)
-{
-	Soundboard *sb = static_cast<Soundboard *>(data);
+	void onSave(obs_data_t *saveData, bool saving, void *data)
+	{
+		Soundboard *sb = static_cast<Soundboard *>(data);
 
-	if (saving)
-		sb->save(saveData);
-	else
-		sb->load(saveData);
-}
+		if (saving)
+			sb->save(saveData);
+		else
+			sb->load(saveData);
+	}
 
-static void onEvent(enum obs_frontend_event event, void *data)
-{
-	Soundboard *sb = static_cast<Soundboard *>(data);
+	void onEvent(enum obs_frontend_event event, void *data)
+	{
+		Soundboard *sb = static_cast<Soundboard *>(data);
 
-	switch (event) {
-	case OBS_FRONTEND_EVENT_FINISHED_LOADING:
-	case OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED:
-		sb->createSource();
-		break;
-	case OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP:
-		sb->clear();
-	default:
-		break;
-	};
-}
+		switch (event) {
+		case OBS_FRONTEND_EVENT_FINISHED_LOADING:
+		case OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED:
+			sb->createSource();
+			break;
+		case OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP:
+			sb->clear();
+		default:
+			break;
+		};
+	}
+} // namespace
 
 Soundboard::Soundboard(QWidget *parent) : QWidget(parent), ui(new Ui_Soundboard)
 {
