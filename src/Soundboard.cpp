@@ -34,51 +34,51 @@
 #define MainStr(str) QString(obs_frontend_get_locale_string(str))
 
 namespace {
-	QString getDefaultString(QString name = "")
-	{
-		if (name.isEmpty())
-			name = QTStr("Sound");
+QString getDefaultString(QString name = "")
+{
+	if (name.isEmpty())
+		name = QTStr("Sound");
 
-		if (!MediaObj::findByName(name))
-			return name;
+	if (!MediaObj::findByName(name))
+		return name;
 
-		int i = 2;
+	int i = 2;
 
-		for (;;) {
-			QString out = name + " " + QString::number(i);
+	for (;;) {
+		QString out = name + " " + QString::number(i);
 
-			if (!MediaObj::findByName(out))
-				return out;
+		if (!MediaObj::findByName(out))
+			return out;
 
-			i++;
-		}
+		i++;
 	}
+}
 
-	void onSave(obs_data_t *saveData, bool saving, void *data)
-	{
-		Soundboard *sb = static_cast<Soundboard *>(data);
+void onSave(obs_data_t *saveData, bool saving, void *data)
+{
+	Soundboard *sb = static_cast<Soundboard *>(data);
 
-		if (saving)
-			sb->save(saveData);
-		else
-			sb->load(saveData);
-	}
+	if (saving)
+		sb->save(saveData);
+	else
+		sb->load(saveData);
+}
 
-	void onEvent(enum obs_frontend_event event, void *data)
-	{
-		Soundboard *sb = static_cast<Soundboard *>(data);
+void onEvent(enum obs_frontend_event event, void *data)
+{
+	Soundboard *sb = static_cast<Soundboard *>(data);
 
-		switch (event) {
-		case OBS_FRONTEND_EVENT_FINISHED_LOADING:
-		case OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED:
-			sb->createSource();
-			break;
-		case OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP:
-			sb->clear();
-		default:
-			break;
-		};
-	}
+	switch (event) {
+	case OBS_FRONTEND_EVENT_FINISHED_LOADING:
+	case OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED:
+		sb->createSource();
+		break;
+	case OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP:
+		sb->clear();
+	default:
+		break;
+	};
+}
 } // namespace
 
 Soundboard::Soundboard(QWidget *parent) : QWidget(parent), ui(new Ui_Soundboard)
@@ -101,8 +101,7 @@ Soundboard::Soundboard(QWidget *parent) : QWidget(parent), ui(new Ui_Soundboard)
 
 	renameMedia = new QAction(MainStr("Rename"), this);
 	renameMedia->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-	connect(renameMedia, &QAction::triggered, this,
-		&Soundboard::editMediaName);
+	connect(renameMedia, &QAction::triggered, this, &Soundboard::editMediaName);
 
 #ifdef __APPLE__
 	renameMedia->setShortcut({Qt::Key_Return});
@@ -112,8 +111,7 @@ Soundboard::Soundboard(QWidget *parent) : QWidget(parent), ui(new Ui_Soundboard)
 
 	addAction(renameMedia);
 
-	connect(ui->list->itemDelegate(), &QAbstractItemDelegate::closeEditor,
-		this, &Soundboard::mediaNameEdited);
+	connect(ui->list->itemDelegate(), &QAbstractItemDelegate::closeEditor, this, &Soundboard::mediaNameEdited);
 }
 
 Soundboard::~Soundboard()
@@ -149,9 +147,7 @@ QListWidgetItem *Soundboard::findItem(MediaObj *obj)
 void Soundboard::createSource()
 {
 	if (obs_obj_invalid(source)) {
-		source = obs_source_create("ffmpeg_source",
-					   obs_module_text("Soundboard"),
-					   nullptr, nullptr);
+		source = obs_source_create("ffmpeg_source", obs_module_text("Soundboard"), nullptr, nullptr);
 		obs_source_set_hidden(source, true);
 
 		ui->mediaControls->SetSource(source.Get());
@@ -171,16 +167,12 @@ OBSDataArray Soundboard::saveMedia()
 		MediaObj *obj = MediaObj::findByUUID(uuid);
 
 		OBSDataAutoRelease settings = obs_data_create();
-		obs_data_set_string(settings, "name",
-				    QT_TO_UTF8(obj->getName()));
-		obs_data_set_string(settings, "path",
-				    QT_TO_UTF8(obj->getPath()));
+		obs_data_set_string(settings, "name", QT_TO_UTF8(obj->getName()));
+		obs_data_set_string(settings, "path", QT_TO_UTF8(obj->getPath()));
 		obs_data_set_bool(settings, "loop", obj->loopEnabled());
-		obs_data_set_double(settings, "volume",
-				    (double)obj->getVolume());
+		obs_data_set_double(settings, "volume", (double)obj->getVolume());
 
-		OBSDataArrayAutoRelease hotkeyArray =
-			obs_hotkey_save(obj->getHotkey());
+		OBSDataArrayAutoRelease hotkeyArray = obs_hotkey_save(obj->getHotkey());
 		obs_data_set_array(settings, "sound_hotkey", hotkeyArray);
 
 		obs_data_array_push_back(array, settings);
@@ -194,8 +186,7 @@ void Soundboard::loadMedia(OBSDataArray array)
 	for (size_t i = 0; i < obs_data_array_count(array); i++) {
 		OBSDataAutoRelease settings = obs_data_array_item(array, i);
 
-		obs_data_set_default_string(settings, "name",
-					    obs_module_text("Sound"));
+		obs_data_set_default_string(settings, "name", obs_module_text("Sound"));
 		obs_data_set_default_double(settings, "volume", 1.0);
 
 		QString name = obs_data_get_string(settings, "name");
@@ -203,8 +194,7 @@ void Soundboard::loadMedia(OBSDataArray array)
 		bool loop = obs_data_get_bool(settings, "loop");
 		float volume = (float)obs_data_get_double(settings, "volume");
 
-		OBSDataArrayAutoRelease hotkeyArray =
-			obs_data_get_array(settings, "sound_hotkey");
+		OBSDataArrayAutoRelease hotkeyArray = obs_data_get_array(settings, "sound_hotkey");
 
 		MediaObj *obj = add(name, path);
 		obs_hotkey_load(obj->getHotkey(), hotkeyArray);
@@ -228,25 +218,21 @@ void Soundboard::save(OBSData saveData)
 
 	obs_data_set_bool(saveData, "dock_visible", dock->isVisible());
 	obs_data_set_bool(saveData, "dock_floating", dock->isFloating());
-	obs_data_set_string(saveData, "dock_geometry",
-			    dock->saveGeometry().toBase64().constData());
+	obs_data_set_string(saveData, "dock_geometry", dock->saveGeometry().toBase64().constData());
 	obs_data_set_int(saveData, "dock_area", window->dockWidgetArea(dock));
 	obs_data_set_bool(saveData, "grid_mode", ui->list->GetGridMode());
 
 	MediaObj *obj = getCurrentMediaObj();
 
 	if (obj)
-		obs_data_set_string(saveData, "current_sound",
-				    QT_TO_UTF8(obj->getName()));
+		obs_data_set_string(saveData, "current_sound", QT_TO_UTF8(obj->getName()));
 
-	obs_data_set_bool(saveData, "use_countdown",
-			  ui->mediaControls->countDownTimer);
+	obs_data_set_bool(saveData, "use_countdown", ui->mediaControls->countDownTimer);
 }
 
 void Soundboard::loadSource(OBSData saveData)
 {
-	OBSDataAutoRelease sourceData =
-		obs_data_get_obj(saveData, "soundboard_source");
+	OBSDataAutoRelease sourceData = obs_data_get_obj(saveData, "soundboard_source");
 
 	if (sourceData) {
 		obs_data_set_obj(sourceData, "settings", nullptr);
@@ -262,24 +248,20 @@ void Soundboard::loadSource(OBSData saveData)
 
 void Soundboard::load(OBSData saveData)
 {
-	QMainWindow *window =
-		static_cast<QMainWindow *>(obs_frontend_get_main_window());
+	QMainWindow *window = static_cast<QMainWindow *>(obs_frontend_get_main_window());
 	QDockWidget *dock = window->findChild<QDockWidget *>("SoundboardDock");
 
 	loadSource(saveData);
 
-	OBSDataArrayAutoRelease array =
-		obs_data_get_array(saveData, "soundboard_array");
+	OBSDataArrayAutoRelease array = obs_data_get_array(saveData, "soundboard_array");
 	loadMedia(array.Get());
 
 	const char *geometry = obs_data_get_string(saveData, "dock_geometry");
 
 	if (geometry && *geometry)
-		dock->restoreGeometry(
-			QByteArray::fromBase64(QByteArray(geometry)));
+		dock->restoreGeometry(QByteArray::fromBase64(QByteArray(geometry)));
 
-	const auto dockArea = static_cast<Qt::DockWidgetArea>(
-		obs_data_get_int(saveData, "dock_area"));
+	const auto dockArea = static_cast<Qt::DockWidgetArea>(obs_data_get_int(saveData, "dock_area"));
 
 	if (dockArea)
 		window->addDockWidget(dockArea, dock);
@@ -467,10 +449,9 @@ void Soundboard::on_actionRemove_triggered()
 
 	QString name = obj->getName();
 
-	QMessageBox::StandardButton reply =
-		QMessageBox::question(this, MainStr("ConfirmRemove.Title"),
-				      MainStr("ConfirmRemove.Text").arg(name),
-				      QMessageBox::Yes | QMessageBox::No);
+	QMessageBox::StandardButton reply = QMessageBox::question(this, MainStr("ConfirmRemove.Title"),
+								  MainStr("ConfirmRemove.Text").arg(name),
+								  QMessageBox::Yes | QMessageBox::No);
 
 	if (reply == QMessageBox::No)
 		return;
@@ -530,7 +511,6 @@ void Soundboard::on_list_customContextMenuRequested(const QPoint &pos)
 	else
 		listAction->setChecked(true);
 
-
 	popup.addMenu(&subMenu);
 
 	popup.exec(QCursor::pos());
@@ -561,7 +541,11 @@ void Soundboard::dragMoveEvent(QDragMoveEvent *event)
 void Soundboard::dropEvent(QDropEvent *event)
 {
 	QStringList supportedExt;
-	supportedExt << "mp3" << "aac" << "ogg" << "wav" << "flac";
+	supportedExt << "mp3"
+		     << "aac"
+		     << "ogg"
+		     << "wav"
+		     << "flac";
 
 	foreach(const QUrl &url, event->mimeData()->urls())
 	{
@@ -608,28 +592,22 @@ void Soundboard::mediaNameEdited(QWidget *editor)
 
 	if (name.isEmpty()) {
 		item->setText(origName);
-		QMessageBox::warning(this, MainStr("EmptyName.Title"),
-				     MainStr("EmptyName.Text"));
+		QMessageBox::warning(this, MainStr("EmptyName.Title"), MainStr("EmptyName.Text"));
 		return;
 	}
 
 	if (MediaObj::findByName(name)) {
 		item->setText(origName);
-		QMessageBox::warning(this, MainStr("NameExists.Title"),
-				     MainStr("NameExists.Text"));
+		QMessageBox::warning(this, MainStr("NameExists.Title"), MainStr("NameExists.Text"));
 		return;
 	}
 
 	obj->setName(name);
 }
 
-MediaRenameDelegate::MediaRenameDelegate(QObject *parent)
-	: QStyledItemDelegate(parent)
-{
-}
+MediaRenameDelegate::MediaRenameDelegate(QObject *parent) : QStyledItemDelegate(parent) {}
 
-void MediaRenameDelegate::setEditorData(QWidget *editor,
-					const QModelIndex &index) const
+void MediaRenameDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
 {
 	QStyledItemDelegate::setEditorData(editor, index);
 	QLineEdit *lineEdit = qobject_cast<QLineEdit *>(editor);
@@ -663,8 +641,7 @@ OBS_MODULE_USE_DEFAULT_LOCALE("Soundboard", "en-US")
 
 bool obs_module_load(void)
 {
-	blog(LOG_INFO, "Soundboard plugin version %s is loaded",
-	     PLUGIN_VERSION);
+	blog(LOG_INFO, "Soundboard plugin version %s is loaded", PLUGIN_VERSION);
 
 	return true;
 }
@@ -674,8 +651,7 @@ void obs_module_post_load(void)
 	obs_frontend_push_ui_translation(obs_module_get_string);
 
 	Soundboard *sb = new Soundboard();
-	obs_frontend_add_dock_by_id("SoundboardDock",
-				    obs_module_text("Soundboard"), sb);
+	obs_frontend_add_dock_by_id("SoundboardDock", obs_module_text("Soundboard"), sb);
 
 	obs_frontend_pop_ui_translation();
 }

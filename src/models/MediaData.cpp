@@ -9,17 +9,14 @@
 
 std::vector<MediaObj *> MediaObj::mediaItems;
 
-MediaObj::MediaObj(const QString &name_, const QString &path_)
-	: name(name_),
-	  path(path_)
+MediaObj::MediaObj(const QString &name_, const QString &path_) : name(name_), path(path_)
 {
 	BPtr<char> uuid_ = os_generate_uuid();
 	uuid = uuid_.Get();
 
 	QString hotkeyName = QTStr("SoundHotkey").arg(name);
 
-	auto playSound = [](void *data, obs_hotkey_id, obs_hotkey_t *,
-			    bool pressed) {
+	auto playSound = [](void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed) {
 		MediaObj *sound = static_cast<MediaObj *>(data);
 
 		if (pressed)
@@ -28,9 +25,7 @@ MediaObj::MediaObj(const QString &name_, const QString &path_)
 			QMetaObject::invokeMethod(sound, &MediaObj::released);
 	};
 
-	hotkey = obs_hotkey_register_frontend(QT_TO_UTF8(hotkeyName),
-					      QT_TO_UTF8(hotkeyName), playSound,
-					      this);
+	hotkey = obs_hotkey_register_frontend(QT_TO_UTF8(hotkeyName), QT_TO_UTF8(hotkeyName), playSound, this);
 
 	mediaItems.emplace_back(this);
 }
@@ -38,9 +33,7 @@ MediaObj::MediaObj(const QString &name_, const QString &path_)
 MediaObj::~MediaObj()
 {
 	obs_hotkey_unregister(hotkey);
-	mediaItems.erase(std::remove(mediaItems.begin(), mediaItems.end(),
-				     this),
-			 mediaItems.end());
+	mediaItems.erase(std::remove(mediaItems.begin(), mediaItems.end(), this), mediaItems.end());
 }
 
 MediaObj *MediaObj::findByName(const QString &name)

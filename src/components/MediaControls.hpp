@@ -10,7 +10,7 @@ class Ui_MediaControls;
 class MediaControls : public QWidget {
 	Q_OBJECT
 
-friend class Soundboard;
+	friend class Soundboard;
 
 private:
 	std::vector<OBSSignal> sigs;

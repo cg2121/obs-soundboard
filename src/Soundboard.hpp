@@ -74,8 +74,7 @@ class MediaRenameDelegate : public QStyledItemDelegate {
 
 public:
 	MediaRenameDelegate(QObject *parent);
-	virtual void setEditorData(QWidget *editor,
-				   const QModelIndex &index) const override;
+	virtual void setEditorData(QWidget *editor, const QModelIndex &index) const override;
 
 protected:
 	virtual bool eventFilter(QObject *editor, QEvent *event) override;

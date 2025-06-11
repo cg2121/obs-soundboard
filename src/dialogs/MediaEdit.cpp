@@ -64,12 +64,10 @@ void MediaEdit::on_browseButton_clicked()
 	if (!folder.isEmpty())
 		folder = QFileInfo(folder).absoluteDir().absolutePath();
 	else
-		folder = QStandardPaths::writableLocation(
-			QStandardPaths::HomeLocation);
+		folder = QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
 
-	QString fileName = QFileDialog::getOpenFileName(
-		this, QTStr("OpenAudioFile"), folder,
-		("Audio (*.mp3 *.aac *.ogg *.wav *.flac)"));
+	QString fileName = QFileDialog::getOpenFileName(this, QTStr("OpenAudioFile"), folder,
+							("Audio (*.mp3 *.aac *.ogg *.wav *.flac)"));
 
 	if (!fileName.isEmpty())
 		ui->path->setText(fileName);
@@ -85,20 +83,17 @@ void MediaEdit::on_buttonBox_clicked(QAbstractButton *button)
 		QString name = getName();
 
 		if (name.isEmpty()) {
-			QMessageBox::warning(this, MainStr("EmptyName.Title"),
-					     MainStr("EmptyName.Text"));
+			QMessageBox::warning(this, MainStr("EmptyName.Title"), MainStr("EmptyName.Text"));
 			return;
 		}
 
 		if (origText != name && MediaObj::findByName(name)) {
-			QMessageBox::warning(this, MainStr("NameExists.Title"),
-					     MainStr("NameExists.Text"));
+			QMessageBox::warning(this, MainStr("NameExists.Title"), MainStr("NameExists.Text"));
 			return;
 		}
 
 		if (ui->path->text().isEmpty()) {
-			QMessageBox::warning(this, QTStr("NoFile.Title"),
-					     QTStr("NoFile.Text"));
+			QMessageBox::warning(this, QTStr("NoFile.Title"), QTStr("NoFile.Text"));
 			return;
 		}
 
