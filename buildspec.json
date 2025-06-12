@@ -41,5 +41,8 @@
   "version": "2.0.0",
   "author": "cg2121",
   "website": "https://github.com/cg2121",
-  "email": "claytong1214@gmail.com"
+  "email": "claytong1214@gmail.com",
+  "uuids": {
+    "windowsApp": "D75CB3B7-515E-40EA-A080-C6DDA91513FB"
+  }
 }

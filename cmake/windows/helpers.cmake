@@ -54,6 +54,19 @@ function(set_target_properties_plugin target)
   list(FILTER target_ui_files INCLUDE REGEX ".+\\.(ui|qrc)")
   source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" PREFIX "UI Files" FILES ${target_ui_files})
 
+  set(valid_uuid FALSE)
+  check_uuid(${_windowsAppUUID} valid_uuid)
+  if(NOT valid_uuid)
+    message(FATAL_ERROR "Specified Windows package UUID is not a valid UUID value: ${_windowsAppUUID}")
+  else()
+    set(UUID_APP ${_windowsAppUUID})
+  endif()
+
+  configure_file(
+    cmake/windows/resources/installer-Windows.iss.in
+    "${CMAKE_CURRENT_BINARY_DIR}/installer-Windows.generated.iss"
+  )
+
   configure_file(cmake/windows/resources/resource.rc.in "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.rc")
   target_sources(${CMAKE_PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.rc")
 endfunction()

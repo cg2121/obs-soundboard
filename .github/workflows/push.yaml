@@ -73,6 +73,8 @@ jobs:
 
           variants=(
             'windows-x64;zip|exe'
+            'windows-x64-Portable;zip|exe'
+            'windows-x64-Installer;zip|exe'
             'macos-universal;tar.xz|pkg'
             'ubuntu-24.04-x86_64;tar.xz|deb|ddeb'
             'sources;tar.xz'
