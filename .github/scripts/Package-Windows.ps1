@@ -3,8 +3,7 @@ param(
     [ValidateSet('x64')]
     [string] $Target = 'x64',
     [ValidateSet('Debug', 'RelWithDebInfo', 'Release', 'MinSizeRel')]
-    [string] $Configuration = 'RelWithDebInfo',
-    [switch] $BuildInstaller = $false
+    [string] $Configuration = 'RelWithDebInfo'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -70,7 +69,6 @@ function Package {
     Compress-Archive -Force @CompressArgs
     Log-Group
 
-    # Windows Portable Package
     Log-Group "Archiving Portable ${ProductName}..."
     tree /F "${ProjectRoot}/release/${Configuration}/${ProductName}"
     Copy-Item -Path "${ProjectRoot}/release/${Configuration}/${ProductName}/data/locale" -Destination "${ProjectRoot}/release-portable/${Configuration}/data/obs-plugins/${ProductName}/locale" -Recurse
@@ -86,25 +84,36 @@ function Package {
     Compress-Archive -Force @CompressArgs
     Log-Group
 
-    # Windows Installer
     # Declare the location of the InnoSetup setup file
-    if ( ( $BuildInstaller ) ) {
-        $IsccFile = "${ProjectRoot}/build_${Target}/installer-Windows.generated.iss"
+    $IsccFile = "${ProjectRoot}/build_${Target}/installer-Windows.generated.iss"
 
-        if ( ! ( Test-Path -Path $IsccFile ) ) {
-            throw 'InnoSetup install script not found. Run the build script or the CMake build and install procedures first.'
-        }
-
-        Log-Information 'Creating InnoSetup installer...'
-        Push-Location -Stack BuildTemp
-        Ensure-Location -Path "${ProjectRoot}/release"
-        Copy-Item -Path ${Configuration} -Destination Package -Recurse
-        Invoke-External iscc ${IsccFile} /O"${ProjectRoot}/release" /F"${OutputName}-Installer"
-        Remove-Item -Path Package -Recurse
-        Pop-Location -Stack BuildTemp
-
-        Log-Group
+    # Throw an error if the provided path is invalid
+    if ( ! ( Test-Path -Path $IsccFile ) ) {
+        throw 'InnoSetup install script not found. Run the build script or the CMake build and install procedures first.'
     }
+
+    Log-Information 'Creating InnoSetup installer...'
+
+    # Push the current location on the "BuildTemp" directory stack for easier return later
+    Push-Location -Stack BuildTemp
+
+    # Change to "release" sub-directory of the project root directory
+    Ensure-Location -Path "${ProjectRoot}/release"
+
+    # Copy the directory for the specified configuration (e.g. "Release") to a new directory named "Package"
+    Copy-Item -Path ${Configuration} -Destination Package -Recurse
+
+    # Invoke the InnoSetup iscc compiler with the specified setup file and the sub-directory "release" in 
+    # the project root directory as the output directory
+    Invoke-External iscc ${IsccFile} /O"${ProjectRoot}/release" /F"${OutputName}-Installer"
+
+    # Remove the copied "Package" directory and its contents
+    Remove-Item -Path Package -Recurse
+
+    # Pop the location stored in the "BuildTemp" directory stack earlier
+    Pop-Location -Stack BuildTemp
+
+    Log-Group
 }
 
 Package

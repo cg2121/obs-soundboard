@@ -113,7 +113,6 @@ build() {
   log_group "Xcode and SDK Info"
   export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
   export DEVELOPER_DIR="/Applications/Xcode_16.1.0.app/Contents/Developer"
-
   xcodebuild -version
   xcodebuild -showsdks
   xcode-select -p
